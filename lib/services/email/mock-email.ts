@@ -5,16 +5,17 @@ import {
   getWelcomeEmailTemplate, 
   getPasswordResetEmailTemplate 
 } from './templates';
+import { logger } from './logger';
 
 export class MockEmailService implements EmailService {
   private config = getEmailConfig();
 
   private logEmail(to: string, subject: string, html: string) {
-    console.log('\n=== Development Email Service ===');
-    console.log('To:', to);
-    console.log('Subject:', subject);
-    console.log('HTML:', html);
-    console.log('=============================\n');
+    logger.info('\n=== Development Email Service ===');
+    logger.info('To:', to);
+    logger.info('Subject:', subject);
+    logger.info('HTML:', html);
+    logger.info('=============================\n');
   }
 
   async sendVerificationEmail(email: string, token: string): Promise<void> {

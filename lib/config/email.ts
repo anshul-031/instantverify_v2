@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-// Basic email configuration schema
 const emailConfigSchema = z.object({
   smtp: z.object({
     host: z.string().min(1, "SMTP host is required"),
@@ -18,26 +17,9 @@ const emailConfigSchema = z.object({
 
 export type EmailConfig = z.infer<typeof emailConfigSchema>;
 
-// Default development configuration
-const devConfig: EmailConfig = {
+const config: EmailConfig = {
   smtp: {
-    host: 'smtp.ethereal.email',
-    port: 587,
-    secure: false,
-    auth: {
-      user: '',
-      pass: '',
-    },
-  },
-  from: 'dev@instantverify.in',
-  appUrl: 'http://localhost:3000',
-  isDev: true,
-};
-
-// Production configuration from environment variables
-const prodConfig: EmailConfig = {
-  smtp: {
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    host: process.env.SMTP_HOST || '',
     port: parseInt(process.env.SMTP_PORT || '587', 10),
     secure: process.env.SMTP_PORT === '465',
     auth: {
@@ -45,21 +27,17 @@ const prodConfig: EmailConfig = {
       pass: process.env.SMTP_PASS,
     },
   },
-  from: process.env.SMTP_FROM || 'noreply@instantverify.in',
-  appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  from: process.env.SMTP_FROM || '',
+  appUrl: process.env.NEXT_PUBLIC_APP_URL || '',
   isDev: process.env.NODE_ENV === 'development',
 };
 
-export const emailConfig = process.env.NODE_ENV === 'development' ? devConfig : prodConfig;
-
 export function getEmailConfig(): EmailConfig {
-  const config = emailConfig;
   try {
     return emailConfigSchema.parse(config);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.warn('Using development email configuration due to validation error:', error);
-      return devConfig;
+      console.warn('Email configuration validation error:', error);
     }
     throw error;
   }
