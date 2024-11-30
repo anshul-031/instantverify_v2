@@ -2,14 +2,21 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyAuth } from './lib/auth';
 
-const publicPaths = ['/', '/login', '/signup', '/reset-password'];
+const publicPaths = [
+  '/', 
+  '/login', 
+  '/signup', 
+  '/reset-password',
+  '/verify-email',
+  '/api/auth/verify-email'
+];
 
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value;
   const pathname = request.nextUrl.pathname;
 
   // Allow public paths
-  if (publicPaths.includes(pathname)) {
+  if (publicPaths.some(path => pathname.startsWith(path))) {
     return NextResponse.next();
   }
 
