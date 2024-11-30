@@ -4,9 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
+import { AuthButtons } from '@/components/auth/auth-buttons';
+import { useAuth } from '@/lib/hooks/use-auth';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <header className="fixed w-full bg-white/80 backdrop-blur-md z-50 border-b">
@@ -22,12 +25,12 @@ export function Header() {
             <Link href="/#services" className="text-sm font-medium hover:text-primary">Services</Link>
             <Link href="/#pricing" className="text-sm font-medium hover:text-primary">Pricing</Link>
             <Link href="/contact" className="text-sm font-medium hover:text-primary">Contact</Link>
-            <Link href="/login">
-              <Button variant="outline" size="sm">Login</Button>
-            </Link>
-            <Link href="/signup">
-              <Button size="sm">Sign Up</Button>
-            </Link>
+            {user && (
+              <Link href="/verify" className="text-sm font-medium hover:text-primary">
+                Verify
+              </Link>
+            )}
+            <AuthButtons />
           </nav>
 
           {/* Mobile menu button */}
@@ -47,12 +50,14 @@ export function Header() {
               <Link href="/#services" className="text-sm font-medium hover:text-primary">Services</Link>
               <Link href="/#pricing" className="text-sm font-medium hover:text-primary">Pricing</Link>
               <Link href="/contact" className="text-sm font-medium hover:text-primary">Contact</Link>
-              <Link href="/login">
-                <Button variant="outline" size="sm" className="w-full">Login</Button>
-              </Link>
-              <Link href="/signup">
-                <Button size="sm" className="w-full">Sign Up</Button>
-              </Link>
+              {user && (
+                <Link href="/verify" className="text-sm font-medium hover:text-primary">
+                  Verify
+                </Link>
+              )}
+              <div className="flex flex-col space-y-2">
+                <AuthButtons />
+              </div>
             </div>
           </div>
         )}

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -16,31 +17,25 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const router = useRouter();
+  const { login } = useAuth();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/';
+  const redirect = searchParams.get('redirect') || '/verify';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, rememberMe }),
-      });
-
-      if (!response.ok) {
+      const success = await login(email, password, redirect);
+      
+      if (success) {
+        toast({
+          title: "Login Successful",
+          description: "Welcome back!",
+        });
+      } else {
         throw new Error('Login failed');
       }
-
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!",
-      });
-
-      router.push(redirect);
     } catch (error) {
       toast({
         title: "Login Failed",
