@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { prisma } from '@/lib/db';
 import { SignUpFormData } from '@/lib/validations/auth';
 import { emailService } from '@/lib/services/email';
@@ -8,6 +9,10 @@ import { generateEmailVerificationToken } from '@/lib/auth/token';
 export async function POST(request: Request) {
   try {
     const data: SignUpFormData = await request.json();
+    const headersList = headers();
+    const host = headersList.get('host') || '';
+    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+    const baseUrl = `${protocol}://${host}`;
     
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
@@ -43,8 +48,9 @@ export async function POST(request: Request) {
       }
     });
 
-    // Send verification email
-    await emailService.sendVerificationEmail(data.email, verificationToken);
+    // Send verification email with dynamic base URL
+    const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
+    await emailService.sendVerificationEmail(data.email, verificationUrl);
 
     return NextResponse.json({ 
       success: true,

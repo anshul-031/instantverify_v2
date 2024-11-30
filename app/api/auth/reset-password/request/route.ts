@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { prisma } from '@/lib/db';
 import { resetPasswordRequestSchema } from '@/lib/validations/auth';
 import { emailService } from '@/lib/services/email';
@@ -8,6 +9,10 @@ export async function POST(request: Request) {
   try {
     const data = await request.json();
     const validatedData = resetPasswordRequestSchema.parse(data);
+    const headersList = headers();
+    const host = headersList.get('host') || '';
+    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+    const baseUrl = `${protocol}://${host}`;
     
     // Find user
     const user = await prisma.user.findUnique({
@@ -22,8 +27,9 @@ export async function POST(request: Request) {
         data: { resetPasswordToken: resetToken }
       });
 
-      // Send reset email
-      await emailService.sendPasswordResetEmail(validatedData.email, resetToken);
+      // Send reset email with dynamic base URL
+      const resetUrl = `${baseUrl}/reset-password/confirm?token=${resetToken}`;
+      await emailService.sendPasswordResetEmail(validatedData.email, resetUrl);
     }
 
     // Always return success to prevent email enumeration

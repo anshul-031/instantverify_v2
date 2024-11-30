@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { EmailService, EmailTemplate } from './types';
+import { EmailService } from './types';
 import { getEmailConfig } from '@/lib/config/email';
 import { logger } from './logger';
 import { 
@@ -49,7 +49,7 @@ export class EmailServiceImpl implements EmailService {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  private async sendWithRetry(email: string, template: EmailTemplate): Promise<void> {
+  private async sendWithRetry(email: string, template: { subject: string; html: string }): Promise<void> {
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= this.retryAttempts; attempt++) {
@@ -85,9 +85,8 @@ export class EmailServiceImpl implements EmailService {
     );
   }
 
-  async sendVerificationEmail(email: string, token: string): Promise<void> {
+  async sendVerificationEmail(email: string, verificationUrl: string): Promise<void> {
     try {
-      const verificationUrl = `${this.config.appUrl}/verify-email?token=${token}`;
       const template = getVerificationEmailTemplate(email, verificationUrl);
       await this.sendWithRetry(email, template);
     } catch (error) {
@@ -106,9 +105,8 @@ export class EmailServiceImpl implements EmailService {
     }
   }
 
-  async sendPasswordResetEmail(email: string, token: string): Promise<void> {
+  async sendPasswordResetEmail(email: string, resetUrl: string): Promise<void> {
     try {
-      const resetUrl = `${this.config.appUrl}/reset-password/confirm?token=${token}`;
       const template = getPasswordResetEmailTemplate(email, resetUrl);
       await this.sendWithRetry(email, template);
     } catch (error) {
