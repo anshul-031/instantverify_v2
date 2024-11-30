@@ -2,8 +2,14 @@ import { z } from 'zod';
 import { 
   VerificationType, 
   VerificationMethod, 
-  SecurityLevel 
+  SecurityLevel,
+  VerificationStatus 
 } from '@/lib/types/verification';
+
+// Custom validator for File objects
+const fileSchema = z.custom<File>((data) => data instanceof File, {
+  message: "Must be a File object"
+});
 
 export const verificationSchema = z.object({
   type: z.enum(['tenant', 'maid', 'driver', 'matrimonial', 'other'] as const),
@@ -16,8 +22,8 @@ export const verificationSchema = z.object({
     'voter-id'
   ] as const),
   documents: z.object({
-    governmentId: z.array(z.string()).optional(),
-    personPhoto: z.string().optional(),
+    governmentId: z.array(fileSchema).optional(),
+    personPhoto: fileSchema.optional(),
   }).optional(),
   additionalInfo: z.object({
     aadhaarNumber: z.string().optional(),
@@ -28,8 +34,9 @@ export const verificationSchema = z.object({
   }).optional(),
 });
 
-export type VerificationFormData = z.infer<typeof verificationSchema>;
+export type VerificationSchemaType = z.infer<typeof verificationSchema>;
 
+// Separate schema for API responses where documents are URLs
 export const verificationResponseSchema = z.object({
   id: z.string(),
   type: z.enum(['tenant', 'maid', 'driver', 'matrimonial', 'other'] as const),
@@ -41,6 +48,18 @@ export const verificationResponseSchema = z.object({
     'driving-license',
     'voter-id'
   ] as const),
+  securityLevel: z.enum(['most-advanced', 'medium-advanced', 'less-advanced'] as const),
+  documents: z.object({
+    governmentId: z.array(z.string()).optional(),
+    personPhoto: z.string().optional(),
+  }).optional(),
+  additionalInfo: z.object({
+    aadhaarNumber: z.string().optional(),
+    drivingLicenseNumber: z.string().optional(),
+    voterIdNumber: z.string().optional(),
+    dateOfBirth: z.string().optional(),
+    otp: z.string().optional(),
+  }).optional(),
   status: z.enum([
     'pending',
     'payment-pending',

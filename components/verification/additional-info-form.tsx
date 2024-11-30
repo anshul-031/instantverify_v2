@@ -10,18 +10,20 @@ import { VerificationMethod, VerificationDetails } from "@/lib/types/verificatio
 
 interface Props {
   method: VerificationMethod;
-  onSubmit: (data: VerificationDetails['additionalInfo']) => Promise<void>;
+  onSubmit: (data: NonNullable<VerificationDetails['additionalInfo']>) => Promise<void>;
   isSubmitting: boolean;
 }
 
+const initialFormState: NonNullable<VerificationDetails['additionalInfo']> = {
+  aadhaarNumber: "",
+  drivingLicenseNumber: "",
+  voterIdNumber: "",
+  dateOfBirth: "",
+  otp: "",
+};
+
 export function AdditionalInfoForm({ method, onSubmit, isSubmitting }: Props) {
-  const [formData, setFormData] = useState<VerificationDetails['additionalInfo']>({
-    aadhaarNumber: "",
-    drivingLicenseNumber: "",
-    voterIdNumber: "",
-    dateOfBirth: "",
-    otp: "",
-  });
+  const [formData, setFormData] = useState(initialFormState);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +31,10 @@ export function AdditionalInfoForm({ method, onSubmit, isSubmitting }: Props) {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
   };
 
   const requiresOtp = method.includes("aadhaar");

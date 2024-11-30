@@ -1,17 +1,33 @@
 import { NextResponse } from 'next/server';
 import { verificationSchema } from '@/lib/validations/verification';
 import { v4 as uuidv4 } from 'uuid';
+import { uploadDocuments } from '@/lib/api/verification';
 
 export async function POST(request: Request) {
   try {
     const data = await request.json();
     const validatedData = verificationSchema.parse(data);
 
+    // Handle file uploads and get URLs
+    let documentUrls = { governmentId: [], personPhoto: undefined };
+    if (validatedData.documents) {
+      if (validatedData.documents.governmentId?.length) {
+        const uploadResult = await uploadDocuments(validatedData.documents.governmentId);
+        documentUrls.governmentId = uploadResult.urls;
+      }
+      if (validatedData.documents.personPhoto) {
+        const uploadResult = await uploadDocuments([validatedData.documents.personPhoto]);
+        documentUrls.personPhoto = uploadResult.urls[0];
+      }
+    }
+
     // Create verification record
     const verification = {
       id: uuidv4(),
       ...validatedData,
+      documents: documentUrls,
       status: 'pending',
+      securityLevel: 'most-advanced',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -49,6 +65,12 @@ export async function GET(request: Request) {
       type: 'tenant',
       method: 'aadhaar-otp',
       status: 'pending',
+      securityLevel: 'most-advanced',
+      documents: {
+        governmentId: [],
+        personPhoto: undefined
+      },
+      additionalInfo: {},
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

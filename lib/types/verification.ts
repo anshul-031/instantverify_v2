@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+// Core verification types
 export type VerificationType = 
   | "tenant" 
   | "maid" 
@@ -27,47 +28,28 @@ export type VerificationStatus =
   | "rejected";
 
 export interface VerificationDocuments {
-  governmentId?: File[];
-  personPhoto?: File;
+  governmentId?: File[] | string[];
+  personPhoto?: File | string;
 }
 
-export interface VerificationDetails {
-  id: string;
+export interface VerificationFormData {
   type: VerificationType;
   country: string;
   method: VerificationMethod;
-  securityLevel: SecurityLevel;
-  documents: VerificationDocuments;
-  additionalInfo: {
+  documents?: VerificationDocuments;
+  additionalInfo?: {
     aadhaarNumber?: string;
     drivingLicenseNumber?: string;
     voterIdNumber?: string;
     dateOfBirth?: string;
     otp?: string;
   };
+}
+
+export interface VerificationDetails extends VerificationFormData {
+  id: string;
+  securityLevel: SecurityLevel;
   status: VerificationStatus;
   createdAt: string;
   updatedAt: string;
 }
-
-export const verificationSchema = z.object({
-  type: z.enum(["tenant", "maid", "driver", "matrimonial", "other"]),
-  country: z.string(),
-  method: z.enum([
-    "aadhaar-otp",
-    "driving-license-aadhaar",
-    "voter-id-aadhaar",
-    "driving-license",
-    "voter-id"
-  ]),
-  documents: z.object({
-    governmentId: z.array(z.instanceof(File)).optional(),
-    personPhoto: z.instanceof(File).optional(),
-  }).optional(),
-  aadhaarNumber: z.string().optional(),
-  drivingLicenseNumber: z.string().optional(),
-  voterIdNumber: z.string().optional(),
-  dateOfBirth: z.date().optional(),
-});
-
-export type VerificationFormData = z.infer<typeof verificationSchema>;

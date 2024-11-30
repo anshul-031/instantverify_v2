@@ -7,39 +7,65 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { VerificationStatusDisplay } from "@/components/verification/status-display";
 import { VerificationTimeline } from "@/components/verification/timeline";
+import { VerificationReportView } from "@/components/verification/report/verification-report";
 import { VerificationDetails } from "@/lib/types/verification";
+import { VerificationReport } from "@/lib/types/report";
 import { Loader2 } from "lucide-react";
-import { formatMethodName, formatSecurityLevel } from "@/lib/utils/format";
 
 export default function VerificationStatusPage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
   const [details, setDetails] = useState<VerificationDetails | null>(null);
+  const [report, setReport] = useState<VerificationReport | null>(null);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchDetails = async () => {
-      try {
-        const response = await fetch(`/api/verify/${params.id}`);
-        if (!response.ok) throw new Error("Failed to fetch verification details");
-        const data = await response.json();
-        setDetails(data);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to load verification details",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchReport = async () => {
+    try {
+      setIsGeneratingReport(true);
+      const response = await fetch(`/api/verify/${params.id}/report`);
+      if (!response.ok) throw new Error("Failed to fetch report");
+      const reportData = await response.json();
+      setReport(reportData);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate report",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
 
-    const interval = setInterval(fetchDetails, 10000); // Poll every 10 seconds
+  const fetchDetails = async () => {
+    try {
+      const response = await fetch(`/api/verify/${params.id}`);
+      if (!response.ok) throw new Error("Failed to fetch verification details");
+      const data = await response.json();
+      setDetails(data);
+
+      // If verification is complete and we don't have a report yet, fetch it
+      if (data.status === 'verified' && !report) {
+        await fetchReport();
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load verification details",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(fetchDetails, 5000); // Poll every 5 seconds
     fetchDetails(); // Initial fetch
 
     return () => clearInterval(interval);
-  }, [params.id, toast]);
+  }, [params.id]);
 
   if (loading) {
     return (
@@ -59,7 +85,7 @@ export default function VerificationStatusPage({ params }: { params: { id: strin
 
   return (
     <div className="min-h-screen py-24 px-4">
-      <div className="max-w-3xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto space-y-8">
         <Card className="p-8">
           <VerificationStatusDisplay status={details.status} />
           
@@ -80,38 +106,45 @@ export default function VerificationStatusPage({ params }: { params: { id: strin
               </div>
               <div>
                 <dt className="text-sm text-gray-600">Method</dt>
-                <dd className="font-medium capitalize">{formatMethodName(details.method)}</dd>
+                <dd className="font-medium capitalize">{details.method}</dd>
               </div>
-              {details.securityLevel && (
-                <div>
-                  <dt className="text-sm text-gray-600">Security Level</dt>
-                  <dd className="font-medium capitalize">
-                    {formatSecurityLevel(details.securityLevel)}
-                  </dd>
-                </div>
-              )}
               <div>
                 <dt className="text-sm text-gray-600">Reference ID</dt>
                 <dd className="font-medium">{details.id}</dd>
+              </div>
+              <div>
+                <dt className="text-sm text-gray-600">Security Level</dt>
+                <dd className="font-medium capitalize">{details.securityLevel.replace('-', ' ')}</dd>
               </div>
             </dl>
           </div>
 
           <div className="mt-8 flex justify-end space-x-4">
+            {details.status === 'verified' && !report && !isGeneratingReport && (
+              <Button onClick={fetchReport}>
+                Generate Report
+              </Button>
+            )}
+            {isGeneratingReport && (
+              <Button disabled>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Generating Report...
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => router.push("/verify")}
             >
               New Verification
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => window.print()}
-            >
-              Print Details
-            </Button>
           </div>
         </Card>
+
+        {report && (
+          <div className="mt-8">
+            <VerificationReportView report={report} />
+          </div>
+        )}
       </div>
     </div>
   );

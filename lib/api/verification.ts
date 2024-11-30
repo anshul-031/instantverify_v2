@@ -25,14 +25,9 @@ export async function submitVerification(formData: VerificationFormData) {
 export async function uploadDocuments(files: File[]) {
   try {
     const formData = new FormData();
-    
-    // Add each file to FormData with a unique key
-    files.forEach((file, index) => {
-      formData.append(`document-${index}`, file);
+    files.forEach((file) => {
+      formData.append('files', file);
     });
-
-    // Log the size of files being uploaded
-    console.log('Uploading files:', files.map(f => ({ name: f.name, size: f.size })));
 
     const response = await fetch("/api/verify/upload", {
       method: "POST",
@@ -45,7 +40,6 @@ export async function uploadDocuments(files: File[]) {
     }
 
     const data = await response.json();
-    console.log('Upload response:', data);
     return { success: true, urls: data.urls };
   } catch (error) {
     console.error('Document upload error:', error);

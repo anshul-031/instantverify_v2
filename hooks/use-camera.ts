@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { buildVideoConstraints } from "@/lib/camera/constraints";
+import { handleCameraError } from "@/lib/camera/errors";
+import { getCameraDevices, isCameraSupported, type CameraDevice } from "@/lib/camera/devices";
 
 interface CameraOptions {
   width?: number;
@@ -8,82 +11,121 @@ interface CameraOptions {
   facingMode?: "user" | "environment";
 }
 
-interface CameraHook {
-  stream: MediaStream | null;
-  videoRef: React.RefObject<HTMLVideoElement>;
+interface CameraState {
+  isInitialized: boolean;
+  isPermissionGranted: boolean;
   error: string | null;
-  startCamera: (deviceId?: string) => Promise<void>;
-  stopCamera: () => void;
-  takePhoto: () => Promise<{ file: File; dataUrl: string } | null>;
-  availableDevices: MediaDeviceInfo[];
-  currentDevice: string | undefined;
-  switchCamera: (deviceId: string) => Promise<void>;
 }
 
-export function useCamera(options: CameraOptions = {}): CameraHook {
+export function useCamera(options: CameraOptions = {}) {
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [availableDevices, setAvailableDevices] = useState<MediaDeviceInfo[]>([]);
+  const [state, setState] = useState<CameraState>({
+    isInitialized: false,
+    isPermissionGranted: false,
+    error: null,
+  });
+  const [availableDevices, setAvailableDevices] = useState<CameraDevice[]>([]);
   const [currentDevice, setCurrentDevice] = useState<string>();
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const getDevices = async () => {
+  const getDevices = useCallback(async () => {
     try {
-      await navigator.mediaDevices.getUserMedia({ video: true }); // Request permission first
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === "videoinput");
-      setAvailableDevices(videoDevices);
+      const devices = await getCameraDevices();
+      setAvailableDevices(devices);
+      
+      if (devices.length > 0 && !currentDevice) {
+        setCurrentDevice(devices[0].id);
+      }
     } catch (err) {
-      setError("Camera permission denied or not available");
+      setState(prev => ({ ...prev, error: "Failed to get camera devices" }));
     }
-  };
+  }, [currentDevice]);
 
-  const startCamera = async (deviceId?: string) => {
+  const initializeVideo = useCallback(async (mediaStream: MediaStream): Promise<void> => {
+    if (!videoRef.current) return;
+
     try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera API not supported');
+      videoRef.current.srcObject = mediaStream;
+      
+      await new Promise<void>((resolve, reject) => {
+        if (!videoRef.current) return reject(new Error("Video element not found"));
+        
+        videoRef.current.onloadedmetadata = () => {
+          if (videoRef.current) {
+            videoRef.current.play()
+              .then(() => {
+                setState(prev => ({ ...prev, isInitialized: true }));
+                resolve();
+              })
+              .catch(reject);
+          }
+        };
+        
+        videoRef.current.onerror = () => {
+          reject(new Error("Failed to load video"));
+        };
+      });
+    } catch (error) {
+      throw handleCameraError(error);
+    }
+  }, []);
+
+  const startCamera = useCallback(async (deviceId?: string) => {
+    try {
+      if (!isCameraSupported()) {
+        throw new Error("Camera API not supported");
+      }
+
+      setState(prev => ({ ...prev, error: null }));
+
+      // Stop any existing stream
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
       }
 
       const constraints: MediaStreamConstraints = {
-        video: {
-          width: options.width || 1280,
-          height: options.height || 720,
-          facingMode: deviceId ? undefined : (options.facingMode || "user"),
-          deviceId: deviceId ? { exact: deviceId } : undefined
-        }
+        video: buildVideoConstraints({
+          ...options,
+          deviceId
+        }),
+        audio: false
       };
 
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      await initializeVideo(mediaStream);
+      
       setStream(mediaStream);
       setCurrentDevice(deviceId);
-      setError(null);
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        await new Promise((resolve) => {
-          if (videoRef.current) {
-            videoRef.current.onloadedmetadata = resolve;
-          }
-        });
-        await videoRef.current.play();
-      }
+      setState(prev => ({
+        ...prev,
+        isPermissionGranted: true,
+        error: null
+      }));
+
+      await getDevices();
     } catch (err) {
-      console.error('Camera error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to start camera');
+      const cameraError = handleCameraError(err);
+      setState(prev => ({
+        ...prev,
+        error: cameraError.message,
+        isInitialized: false
+      }));
     }
-  };
+  }, [getDevices, initializeVideo, options, stream]);
 
-  const stopCamera = () => {
+  const stopCamera = useCallback(() => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
       setStream(null);
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
     }
-  };
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setState(prev => ({ ...prev, isInitialized: false }));
+  }, [stream]);
 
-  const takePhoto = async () => {
+  const takePhoto = useCallback(async () => {
     if (!videoRef.current || !stream) return null;
 
     try {
@@ -93,6 +135,12 @@ export function useCamera(options: CameraOptions = {}): CameraHook {
 
       const ctx = canvas.getContext("2d");
       if (!ctx) return null;
+
+      // Flip horizontally if using front camera
+      if (options.facingMode === "user") {
+        ctx.scale(-1, 1);
+        ctx.translate(-canvas.width, 0);
+      }
 
       ctx.drawImage(videoRef.current, 0, 0);
       
@@ -108,28 +156,40 @@ export function useCamera(options: CameraOptions = {}): CameraHook {
 
       return { file, dataUrl };
     } catch (error) {
-      console.error('Error taking photo:', error);
-      setError('Failed to capture photo');
+      console.error("Error taking photo:", error);
+      setState(prev => ({ ...prev, error: "Failed to capture photo" }));
       return null;
     }
-  };
+  }, [options.facingMode]);
 
-  const switchCamera = async (deviceId: string) => {
-    stopCamera();
+  const switchCamera = useCallback(async (deviceId: string) => {
+    await stopCamera();
     await startCamera(deviceId);
-  };
+  }, [startCamera, stopCamera]);
 
   useEffect(() => {
-    getDevices();
+    let mounted = true;
+
+    const init = async () => {
+      if (mounted) {
+        await startCamera();
+      }
+    };
+
+    init();
+
     return () => {
+      mounted = false;
       stopCamera();
     };
-  }, []);
+  }, [startCamera, stopCamera]);
 
   return {
     stream,
     videoRef,
-    error,
+    error: state.error,
+    isInitialized: state.isInitialized,
+    isPermissionGranted: state.isPermissionGranted,
     startCamera,
     stopCamera,
     takePhoto,

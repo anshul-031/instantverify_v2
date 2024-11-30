@@ -6,20 +6,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FileUp, Camera, AlertTriangle, Loader2 } from "lucide-react";
+import { FileUp, Camera, AlertTriangle, Loader2, X } from "lucide-react";
 import { VerificationMethod, VerificationDocuments } from "@/lib/types/verification";
 import { CameraFeed } from "@/components/camera/camera-feed";
-import { uploadDocuments } from "@/lib/api/verification";
 
 interface Props {
   method?: VerificationMethod;
   onUpload: (documents: VerificationDocuments) => void;
+  existingDocuments?: VerificationDocuments;
 }
 
-export function DocumentUpload({ method, onUpload }: Props) {
-  const [files, setFiles] = useState<File[]>([]);
+export function DocumentUpload({ method, onUpload, existingDocuments }: Props) {
+  const [files, setFiles] = useState<File[]>(() => {
+    if (!existingDocuments?.governmentId) return [];
+    return existingDocuments.governmentId instanceof Array && existingDocuments.governmentId[0] instanceof File 
+      ? existingDocuments.governmentId as File[]
+      : [];
+  });
   const [useCamera, setUseCamera] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,9 +55,9 @@ export function DocumentUpload({ method, onUpload }: Props) {
           throw new Error('Upload failed');
         }
 
-        const result = await response.json();
-        setFiles(prevFiles => [...prevFiles, ...newFiles]);
-        onUpload({ governmentId: [...files, ...newFiles] });
+        const updatedFiles = [...files, ...newFiles];
+        setFiles(updatedFiles);
+        onUpload({ governmentId: updatedFiles });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to upload files');
       } finally {
@@ -79,10 +83,9 @@ export function DocumentUpload({ method, onUpload }: Props) {
         throw new Error('Upload failed');
       }
 
-      const result = await response.json();
-      setFiles(prevFiles => [...prevFiles, file]);
-      setPreview(previewUrl);
-      onUpload({ governmentId: [...files, file] });
+      const updatedFiles = [...files, file];
+      setFiles(updatedFiles);
+      onUpload({ governmentId: updatedFiles });
       setUseCamera(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload captured photo');
@@ -91,11 +94,17 @@ export function DocumentUpload({ method, onUpload }: Props) {
     }
   };
 
+  const removeFile = (index: number) => {
+    const updatedFiles = files.filter((_, i) => i !== index);
+    setFiles(updatedFiles);
+    onUpload({ governmentId: updatedFiles });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-2">
         <FileUp className="h-5 w-5 text-primary" />
-        <h2 className="text-xl font-semibold">Upload Documents</h2>
+        <h2 className="text-xl font-semibold">Upload Documents (Optional)</h2>
       </div>
 
       {error && (
@@ -108,7 +117,7 @@ export function DocumentUpload({ method, onUpload }: Props) {
       <Alert>
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
-          Please ensure all documents are clear and readable. Maximum file size is 5MB.
+          You can optionally upload government ID documents. Maximum file size is 5MB.
         </AlertDescription>
       </Alert>
 
@@ -119,7 +128,7 @@ export function DocumentUpload({ method, onUpload }: Props) {
             <div className="flex-1">
               <Input
                 type="file"
-                accept="image/*,application/pdf"
+                accept="image/*"
                 multiple
                 onChange={handleFileChange}
                 className={useCamera ? "hidden" : ""}
@@ -145,25 +154,30 @@ export function DocumentUpload({ method, onUpload }: Props) {
           )}
 
           {useCamera && (
-            <CameraFeed onCapture={handleCapture} />
-          )}
-
-          {preview && (
-            <div className="mt-4">
-              <img
-                src={preview}
-                alt="Captured document"
-                className="max-w-full h-auto rounded-lg"
-              />
-            </div>
+            <CameraFeed 
+              onCapture={handleCapture}
+              facingMode="environment"
+            />
           )}
 
           {files.length > 0 && (
             <ul className="space-y-2">
               {files.map((file, index) => (
-                <li key={index} className="text-sm text-gray-600 flex items-center">
-                  <FileUp className="h-4 w-4 mr-2" />
-                  {file.name} ({(file.size / 1024 / 1024).toFixed(2)}MB)
+                <li key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                  <div className="flex items-center">
+                    <FileUp className="h-4 w-4 mr-2" />
+                    <span className="text-sm text-gray-600">
+                      {file.name} ({(file.size / 1024 / 1024).toFixed(2)}MB)
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeFile(index)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </li>
               ))}
             </ul>

@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server';
+import { verificationResponseSchema } from '@/lib/validations/verification';
+import { generateVerificationReport } from '@/lib/services/verification';
+import { VerificationDetails } from '@/lib/types/verification';
 
 export async function GET(
   request: Request,
@@ -7,12 +10,20 @@ export async function GET(
   try {
     const { id } = params;
 
-    // In a real app, fetch from database here
-    const verification = {
+    // In a real app, fetch from database
+    const verification: VerificationDetails = {
       id,
       type: 'tenant',
       method: 'aadhaar-otp',
-      status: 'pending',
+      status: 'verified',
+      country: 'IN',
+      securityLevel: 'most-advanced',
+      documents: {},
+      additionalInfo: {
+        aadhaarNumber: '123456789012',
+        dateOfBirth: '1990-01-01',
+        otp: '123456'
+      },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -34,13 +45,28 @@ export async function PUT(
   try {
     const { id } = params;
     const data = await request.json();
+    const validatedData = verificationResponseSchema.parse(data);
 
-    // In a real app, update in database here
-    const verification = {
+    // In a real app, update in database
+    const verification: VerificationDetails = {
+      ...validatedData,
       id,
-      ...data,
+      securityLevel: 'most-advanced',
+      documents: {},
+      additionalInfo: {
+        aadhaarNumber: data.additionalInfo?.aadhaarNumber,
+        drivingLicenseNumber: data.additionalInfo?.drivingLicenseNumber,
+        voterIdNumber: data.additionalInfo?.voterIdNumber,
+        dateOfBirth: data.additionalInfo?.dateOfBirth,
+        otp: data.additionalInfo?.otp,
+      },
       updatedAt: new Date().toISOString(),
     };
+
+    // Generate report if verification is complete
+    if (verification.status === 'verified') {
+      await generateVerificationReport(verification);
+    }
 
     return NextResponse.json(verification);
   } catch (error) {
