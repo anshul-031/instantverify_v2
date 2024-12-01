@@ -2,58 +2,50 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-}
+import { useAuthStore } from './use-auth-store';
+import { loginUser, logoutUser } from '@/lib/services/auth';
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { user, loading, setUser, setLoading } = useAuthStore();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    checkAuth();
   }, []);
+
+  const checkAuth = () => {
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Error checking auth:', error);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const login = async (email: string, password: string, redirect?: string) => {
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-
-      const data = await response.json();
-      const userData = {
-        id: data.user.id,
-        email: data.user.email,
-        name: data.user.name,
-      };
-
+      const userData = await loginUser(email, password);
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
-
       router.push(redirect || '/verify');
       return true;
     } catch (error) {
+      console.error('Login error:', error);
       return false;
     }
   };
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await logoutUser();
       localStorage.removeItem('user');
       setUser(null);
       router.push('/');
@@ -67,5 +59,6 @@ export function useAuth() {
     loading,
     login,
     logout,
+    refreshAuth: checkAuth,
   };
 }

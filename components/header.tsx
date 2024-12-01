@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   return (
     <header className="fixed w-full bg-white/80 backdrop-blur-md z-50 border-b">
@@ -25,7 +25,7 @@ export function Header() {
             <Link href="/#services" className="text-sm font-medium hover:text-primary">Services</Link>
             <Link href="/#pricing" className="text-sm font-medium hover:text-primary">Pricing</Link>
             <Link href="/contact" className="text-sm font-medium hover:text-primary">Contact</Link>
-            {user && (
+            {!loading && user && (
               <Link href="/verify" className="text-sm font-medium hover:text-primary">
                 Verify
               </Link>
@@ -50,12 +50,12 @@ export function Header() {
               <Link href="/#services" className="text-sm font-medium hover:text-primary">Services</Link>
               <Link href="/#pricing" className="text-sm font-medium hover:text-primary">Pricing</Link>
               <Link href="/contact" className="text-sm font-medium hover:text-primary">Contact</Link>
-              {user && (
+              {!loading && user && (
                 <Link href="/verify" className="text-sm font-medium hover:text-primary">
                   Verify
                 </Link>
               )}
-              <div className="flex flex-col space-y-2">
+              <div className="pt-2">
                 <AuthButtons />
               </div>
             </div>
