@@ -30,10 +30,9 @@ class EmailService {
     }
   }
 
-  async sendVerificationEmail(email: string, token: string): Promise<void> {
+  async sendVerificationEmail(email: string, verificationUrl: string): Promise<void> {
     try {
       await this.verifyConnection();
-      const verificationUrl = `${this.config.appUrl}/verify-email?token=${token}`;
       const template = getVerificationEmailTemplate(email, verificationUrl);
       
       await this.transporter.sendMail({
