@@ -1,48 +1,21 @@
-"use client";
+import { FileData, VerificationFormData } from '@/lib/types/verification';
+import { uploadDocuments } from './verification/upload';
+import { submitVerification } from './verification/submit';
+import { convertFileToFileData } from './verification/utils';
 
-import { VerificationFormData } from "@/lib/types/verification";
+// Re-export everything from the modular structure
+export * from './verification/types';
+export * from './verification/upload';
+export * from './verification/submit';
+export * from './verification/utils';
 
-export async function submitVerification(formData: VerificationFormData) {
-  try {
-    const response = await fetch("/api/verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return { success: true, data };
-  } catch (error) {
-    console.error('Verification submission error:', error);
-    throw new Error('Failed to submit verification');
-  }
+// Keep the original functions as wrappers for backward compatibility
+export async function submitVerificationRequest(formData: VerificationFormData) {
+  return submitVerification(formData);
 }
 
-export async function uploadDocuments(files: File[]) {
-  try {
-    const formData = new FormData();
-    files.forEach((file) => {
-      formData.append('files', file);
-    });
-
-    const response = await fetch("/api/verify/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Upload failed');
-    }
-
-    const data = await response.json();
-    return { success: true, urls: data.urls };
-  } catch (error) {
-    console.error('Document upload error:', error);
-    throw error;
-  }
+export async function uploadVerificationDocuments(files: File[]) {
+  return uploadDocuments(files);
 }
+
+export { convertFileToFileData };

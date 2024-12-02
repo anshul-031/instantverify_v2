@@ -27,9 +27,14 @@ export type VerificationStatus =
   | "verified"
   | "rejected";
 
+export interface FileData {
+  name: string;
+  size: number;
+  type: string;
+}
+
 export interface VerificationDocuments {
-  governmentId?: File[] | string[];
-  personPhoto?: File | string;
+  governmentId?: (FileData | string)[];
 }
 
 export interface VerificationFormData {

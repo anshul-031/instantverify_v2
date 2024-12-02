@@ -6,10 +6,12 @@ import {
   VerificationStatus 
 } from '@/lib/types/verification';
 
-// Custom validator for File objects
-const fileSchema = z.custom<File>((data) => data instanceof File, {
-  message: "Must be a File object"
-});
+// Custom validator for File-like objects
+const fileSchema = z.object({
+  name: z.string(),
+  size: z.number(),
+  type: z.string(),
+}).passthrough(); // Allow other File properties
 
 export const verificationSchema = z.object({
   type: z.enum(['tenant', 'maid', 'driver', 'matrimonial', 'other'] as const),
@@ -23,7 +25,6 @@ export const verificationSchema = z.object({
   ] as const),
   documents: z.object({
     governmentId: z.array(fileSchema).optional(),
-    personPhoto: fileSchema.optional(),
   }).optional(),
   additionalInfo: z.object({
     aadhaarNumber: z.string().optional(),
@@ -51,7 +52,6 @@ export const verificationResponseSchema = z.object({
   securityLevel: z.enum(['most-advanced', 'medium-advanced', 'less-advanced'] as const),
   documents: z.object({
     governmentId: z.array(z.string()).optional(),
-    personPhoto: z.string().optional(),
   }).optional(),
   additionalInfo: z.object({
     aadhaarNumber: z.string().optional(),

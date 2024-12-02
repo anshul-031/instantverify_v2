@@ -6,41 +6,54 @@ export class CameraError extends Error {
   ) {
     super(message);
     this.name = 'CameraError';
-  }
-}
 
-export function handleCameraError(error: unknown): CameraError {
-  if (error instanceof Error) {
-    // Handle specific error types
-    if ((error as any).name === 'NotAllowedError') {
-      return new CameraError(
-        'Camera access denied. Please grant permission to use your camera.',
-        'PERMISSION_DENIED',
-        error
-      );
+    // Ensure proper prototype chain for instanceof checks
+    Object.setPrototypeOf(this, CameraError.prototype);
+
+    // Capture stack trace
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, CameraError);
     }
-    if ((error as any).name === 'NotFoundError') {
-      return new CameraError(
-        'No camera found. Please ensure your device has a camera.',
-        'NO_CAMERA',
-        error
-      );
-    }
-    if ((error as any).name === 'NotReadableError') {
-      return new CameraError(
-        'Camera is in use by another application.',
-        'CAMERA_IN_USE',
-        error
-      );
-    }
-    return new CameraError(
-      error.message || 'Failed to access camera',
-      'UNKNOWN_ERROR',
-      error
-    );
   }
-  return new CameraError(
-    'An unexpected error occurred',
-    'UNKNOWN_ERROR'
-  );
+
+  static fromDOMException(error: DOMException): CameraError {
+    switch (error.name) {
+      case 'NotAllowedError':
+        return new CameraError(
+          'Camera access denied. Please grant permission to use your camera.',
+          'PERMISSION_DENIED',
+          error
+        );
+      case 'NotFoundError':
+        return new CameraError(
+          'No camera found. Please ensure your device has a camera.',
+          'NO_CAMERA',
+          error
+        );
+      case 'NotReadableError':
+        return new CameraError(
+          'Camera is in use by another application.',
+          'CAMERA_IN_USE',
+          error
+        );
+      case 'OverconstrainedError':
+        return new CameraError(
+          'Camera does not support the requested constraints.',
+          'INVALID_CONSTRAINTS',
+          error
+        );
+      case 'SecurityError':
+        return new CameraError(
+          'Camera access is restricted due to security policy.',
+          'SECURITY_ERROR',
+          error
+        );
+      default:
+        return new CameraError(
+          error.message || 'An unknown camera error occurred',
+          'UNKNOWN_ERROR',
+          error
+        );
+    }
+  }
 }

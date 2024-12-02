@@ -1,31 +1,41 @@
-"use client";
+import type { CameraDevice, CameraConstraints } from './types';
+import { CameraError } from './errors';
 
-export interface CameraDevice {
-  id: string;
-  label: string;
-}
-
-export async function getCameraDevices(): Promise<CameraDevice[]> {
+export async function getVideoDevices(): Promise<CameraDevice[]> {
   try {
+    // Request permissions first to ensure device labels are available
+    await navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        stream.getTracks().forEach(track => track.stop());
+      });
+
     const devices = await navigator.mediaDevices.enumerateDevices();
-    const videoDevices = devices
+    return devices
       .filter(device => device.kind === 'videoinput')
       .map(device => ({
         id: device.deviceId,
         label: device.label || `Camera ${device.deviceId.slice(0, 4)}`
       }));
-    
-    return videoDevices;
   } catch (error) {
-    console.error('Failed to enumerate devices:', error);
-    return [];
+    throw new CameraError(
+      'Failed to get camera devices',
+      'DEVICE_ENUMERATION_ERROR',
+      error as Error
+    );
   }
 }
 
-export function isCameraSupported(): boolean {
-  return !!(
-    typeof navigator !== 'undefined' &&
-    navigator.mediaDevices &&
-    navigator.mediaDevices.getUserMedia
-  );
+export function buildVideoConstraints(options: CameraConstraints): MediaTrackConstraints {
+  const constraints: MediaTrackConstraints = {
+    width: { ideal: options.width || 1280 },
+    height: { ideal: options.height || 720 }
+  };
+
+  if (options.deviceId) {
+    constraints.deviceId = { exact: options.deviceId };
+  } else if (options.facingMode) {
+    constraints.facingMode = { ideal: options.facingMode };
+  }
+
+  return constraints;
 }
