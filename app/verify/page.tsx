@@ -111,6 +111,7 @@ export default function VerificationPage() {
             country={formData.country}
             method={formData.method}
             onSubmit={handleVerificationFormSubmit}
+            onBack={() => setStep(3)}
             initialData={{
               ...formData,
               documents

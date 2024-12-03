@@ -61,6 +61,7 @@ export function DocumentUpload({ method, onUpload, existingDocuments }: Props) {
   });
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const requirement = documentRequirements[method];
 
@@ -109,6 +110,7 @@ export function DocumentUpload({ method, onUpload, existingDocuments }: Props) {
     onUpload({ 
       governmentId: updatedFiles.map(convertFileToFileData)
     });
+    setIsDialogOpen(false); // Auto-dismiss dialog after capture
   };
 
   const removeFile = (index: number) => {
@@ -158,7 +160,7 @@ export function DocumentUpload({ method, onUpload, existingDocuments }: Props) {
                 disabled={uploading || files.length >= requirement.maxFiles}
               />
             </div>
-            <Dialog>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" disabled={files.length >= requirement.maxFiles}>
                   <Camera className="w-4 h-4 mr-2" />

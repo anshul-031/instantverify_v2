@@ -8,6 +8,8 @@ import { DrivingLicenseAadhaarForm } from "./driving-license-aadhaar-form";
 import { VoterIdAadhaarForm } from "./voter-id-aadhaar-form";
 import { DrivingLicenseForm } from "./driving-license-form";
 import { VoterIdForm } from "./voter-id-form";
+import { DocumentSection } from "../document-section";
+import { ArrowLeft } from "lucide-react";
 
 interface FormState {
   type: VerificationType;
@@ -19,6 +21,7 @@ interface FormState {
   dateOfBirth: string;
   otp: string;
   documents: VerificationDocuments;
+  personPhoto?: File;
 }
 
 interface Props {
@@ -26,6 +29,7 @@ interface Props {
   type: VerificationType;
   country: string;
   onSubmit: (data: FormState) => Promise<void>;
+  onBack: () => void;
   initialData?: Partial<FormState>;
 }
 
@@ -41,7 +45,7 @@ const initialFormState: FormState = {
   documents: {}
 };
 
-export function VerificationForm({ method, type, country, onSubmit, initialData }: Props) {
+export function VerificationForm({ method, type, country, onSubmit, onBack, initialData }: Props) {
   const [formData, setFormData] = useState<FormState>({
     ...initialFormState,
     type,
@@ -50,6 +54,7 @@ export function VerificationForm({ method, type, country, onSubmit, initialData 
     ...initialData
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [personPhotoUrl, setPersonPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialData?.documents) {
@@ -65,6 +70,10 @@ export function VerificationForm({ method, type, country, onSubmit, initialData 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.personPhoto) {
+      alert("Please capture your photo before submitting");
+      return;
+    }
     setIsSubmitting(true);
     try {
       await onSubmit(formData);
@@ -81,6 +90,14 @@ export function VerificationForm({ method, type, country, onSubmit, initialData 
         ...docs
       }
     }));
+  };
+
+  const handlePersonPhotoCapture = (file: File) => {
+    setFormData(prev => ({
+      ...prev,
+      personPhoto: file
+    }));
+    setPersonPhotoUrl(URL.createObjectURL(file));
   };
 
   const renderFormContent = () => {
@@ -155,7 +172,10 @@ export function VerificationForm({ method, type, country, onSubmit, initialData 
 
   const isFormValid = () => {
     const hasRequiredDocuments = formData.documents?.governmentId?.length ?? 0 > 0;
+    const hasPersonPhoto = !!formData.personPhoto;
     
+    if (!hasPersonPhoto) return false;
+
     switch (method) {
       case "aadhaar-otp":
         return formData.aadhaarNumber && hasRequiredDocuments;
@@ -174,8 +194,27 @@ export function VerificationForm({ method, type, country, onSubmit, initialData 
 
   return (
     <div className="space-y-6">
+      <Button
+        variant="ghost"
+        onClick={onBack}
+        className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back
+      </Button>
+
       <form onSubmit={handleSubmit}>
-        {renderFormContent()}
+        <div className="space-y-6">
+          <DocumentSection
+            method={method}
+            onDocumentsChange={handleDocumentsChange}
+            onPersonPhotoChange={handlePersonPhotoCapture}
+            documents={formData.documents}
+            personPhotoUrl={personPhotoUrl}
+            isSubmitting={isSubmitting}
+          />
+          {renderFormContent()}
+        </div>
         <Button 
           type="submit" 
           className="w-full mt-6"

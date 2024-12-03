@@ -12,9 +12,10 @@ interface CameraCaptureProps {
   onCapture: (file: File) => void;
   mode: 'person' | 'document';
   aspectRatio?: number;
+  onClose?: () => void;
 }
 
-export function CameraCapture({ onCapture, mode, aspectRatio = 4/3 }: CameraCaptureProps) {
+export function CameraCapture({ onCapture, mode, aspectRatio = 4/3, onClose }: CameraCaptureProps) {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<string>('');
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -121,6 +122,13 @@ export function CameraCapture({ onCapture, mode, aspectRatio = 4/3 }: CameraCapt
       
       // Call the onCapture callback with the file
       onCapture(file);
+
+      // Auto-dismiss after successful capture
+      if (onClose) {
+        setTimeout(() => {
+          onClose();
+        }, 500); // Small delay to show the capture feedback
+      }
     } catch (error) {
       console.error('Error capturing image:', error);
       toast({
