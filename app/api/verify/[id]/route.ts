@@ -51,8 +51,8 @@ export async function PUT(
     const verification: VerificationDetails = {
       ...validatedData,
       id,
-      securityLevel: validatedData.securityLevel || 'most-advanced',
-      documents: validatedData.documents || {},
+      securityLevel: 'most-advanced',
+      documents: {},
       additionalInfo: {
         aadhaarNumber: data.additionalInfo?.aadhaarNumber,
         drivingLicenseNumber: data.additionalInfo?.drivingLicenseNumber,
