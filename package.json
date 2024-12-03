@@ -6,6 +6,7 @@
     "dev": "next dev",
     "prisma:generate": "prisma generate",
     "build": "npm run prisma:generate && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -45,7 +46,6 @@
     "@types/uuid": "^9.0.8",
     "autoprefixer": "10.4.15",
     "bcryptjs": "^2.4.3",
-    "canvas": "^2.10.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
@@ -62,6 +62,7 @@
     "next-themes": "^0.3.0",
     "nodemailer": "^6.9.13",
     "postcss": "8.4.30",
+    "razorpay": "^2.9.2",
     "react": "18.2.0",
     "react-day-picker": "^8.10.1",
     "react-dom": "18.2.0",
@@ -86,4 +87,5 @@
   "engines": {
   "node": "18.x"
 }
+  }
 }

@@ -5,49 +5,73 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
-import { VerificationDetails } from "@/lib/types/verification";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { AdditionalInfoForm } from "@/components/verification/additional-info-form";
-import { formatMethodName, formatSecurityLevel } from "@/lib/utils/format";
+import { formatMethodName } from "@/lib/utils/format";
+import { getMethodDetails } from "@/lib/utils/verification";
+import { useVerificationStore } from "@/lib/store/verification";
 
 export default function ConfirmationPage({ params }: { params: { id: string } }) {
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [details, setDetails] = useState<VerificationDetails | null>(null);
   const router = useRouter();
   const { toast } = useToast();
+  const { getVerification, setVerification } = useVerificationStore();
+  const verification = getVerification(params.id);
 
   useEffect(() => {
-    const fetchDetails = async () => {
-      try {
-        const response = await fetch(`/api/verify/${params.id}`);
-        if (!response.ok) throw new Error("Failed to fetch verification details");
-        const data = await response.json();
-        setDetails(data);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to load verification details",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Check if verification exists
+    if (!verification) {
+      toast({
+        title: "Error",
+        description: "Verification not found",
+        variant: "destructive",
+      });
+      router.push('/verify');
+      return;
+    }
 
-    fetchDetails();
-  }, [params.id, toast]);
+    // Allow both payment-complete and verified statuses
+    const validStatuses = ['payment-complete', 'verified'];
+    if (!validStatuses.includes(verification.status)) {
+      toast({
+        title: "Error",
+        description: "Please complete payment first",
+        variant: "destructive",
+      });
+      router.push(`/verify/payment/${params.id}`);
+    }
+  }, [verification, router, toast, params.id]);
 
-  const handleSubmit = async (additionalInfo: VerificationDetails['additionalInfo']) => {
+  const handleSubmit = async (additionalInfo: NonNullable<typeof verification>['additionalInfo']) => {
+    if (!verification) return;
+
     setSubmitting(true);
     try {
       const response = await fetch(`/api/verify/${params.id}/confirm`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(additionalInfo),
+        body: JSON.stringify({
+          ...verification,
+          additionalInfo,
+          status: 'verified'
+        }),
       });
 
-      if (!response.ok) throw new Error("Failed to confirm verification");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to confirm verification");
+      }
+
+      const updatedVerification = await response.json();
+
+      // Update verification status in store
+      setVerification(params.id, {
+        ...verification,
+        ...updatedVerification,
+        additionalInfo,
+        status: 'verified',
+        updatedAt: new Date().toISOString()
+      });
 
       toast({
         title: "Verification Submitted",
@@ -58,7 +82,7 @@ export default function ConfirmationPage({ params }: { params: { id: string } })
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to submit verification",
+        description: error instanceof Error ? error.message : "Failed to submit verification",
         variant: "destructive",
       });
     } finally {
@@ -66,7 +90,7 @@ export default function ConfirmationPage({ params }: { params: { id: string } })
     }
   };
 
-  if (loading) {
+  if (!verification) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -74,13 +98,8 @@ export default function ConfirmationPage({ params }: { params: { id: string } })
     );
   }
 
-  if (!details) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Verification not found</p>
-      </div>
-    );
-  }
+  const methodDetails = getMethodDetails(verification.method);
+  const requiresAdditionalInfo = methodDetails?.securityLevel === 'most-advanced';
 
   return (
     <div className="min-h-screen py-24 px-4">
@@ -90,7 +109,9 @@ export default function ConfirmationPage({ params }: { params: { id: string } })
             <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-4" />
             <h1 className="text-3xl font-bold mb-2">Payment Successful</h1>
             <p className="text-gray-600">
-              Please confirm your information and provide any additional details required
+              {requiresAdditionalInfo 
+                ? "Please confirm your information and provide any additional details required"
+                : "Your verification request is being processed"}
             </p>
           </div>
 
@@ -100,28 +121,35 @@ export default function ConfirmationPage({ params }: { params: { id: string } })
               <dl className="space-y-2">
                 <div className="flex justify-between">
                   <dt className="text-gray-600">Type</dt>
-                  <dd className="font-medium capitalize">{details.type}</dd>
+                  <dd className="font-medium capitalize">{verification.type}</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-gray-600">Method</dt>
-                  <dd className="font-medium">{formatMethodName(details.method)}</dd>
+                  <dd className="font-medium">{formatMethodName(verification.method)}</dd>
                 </div>
-                {details.securityLevel && (
-                  <div className="flex justify-between">
-                    <dt className="text-gray-600">Security Level</dt>
-                    <dd className="font-medium capitalize">
-                      {formatSecurityLevel(details.securityLevel)}
-                    </dd>
-                  </div>
-                )}
+                <div className="flex justify-between">
+                  <dt className="text-gray-600">Security Level</dt>
+                  <dd className="font-medium capitalize">{verification.securityLevel.replace('-', ' ')}</dd>
+                </div>
               </dl>
             </div>
 
-            <AdditionalInfoForm
-              method={details.method}
-              onSubmit={handleSubmit}
-              isSubmitting={submitting}
-            />
+            {requiresAdditionalInfo ? (
+              <AdditionalInfoForm
+                method={verification.method}
+                onSubmit={handleSubmit}
+                isSubmitting={submitting}
+              />
+            ) : (
+              <div className="text-center">
+                <Button
+                  onClick={() => router.push(`/verify/status/${params.id}`)}
+                  className="w-full max-w-md mx-auto"
+                >
+                  View Verification Status
+                </Button>
+              </div>
+            )}
           </div>
         </Card>
       </div>
