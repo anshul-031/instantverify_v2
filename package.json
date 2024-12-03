@@ -81,5 +81,8 @@
     "@types/react": "18.3.12",
     "prisma": "^5.10.2",
     "typescript": "5.7.2"
-  }
+  },
+  "engines": {
+  "node": "18.x"
+}
 }
