@@ -27,6 +27,8 @@ export function CameraCapture({ onCapture, mode, aspectRatio = 4/3, onClose }: C
   useEffect(() => {
     async function getDevices() {
       try {
+        // Request camera permissions first
+        await navigator.mediaDevices.getUserMedia({ video: true });
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(device => device.kind === 'videoinput');
         setDevices(videoDevices);
@@ -37,13 +39,19 @@ export function CameraCapture({ onCapture, mode, aspectRatio = 4/3, onClose }: C
         console.error('Error getting camera devices:', error);
         toast({
           title: "Error",
-          description: "Failed to access camera devices",
+          description: "Failed to access camera devices. Please ensure camera permissions are granted.",
           variant: "destructive",
         });
       }
     }
 
     getDevices();
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -71,20 +79,14 @@ export function CameraCapture({ onCapture, mode, aspectRatio = 4/3, onClose }: C
         console.error('Error accessing camera:', error);
         toast({
           title: "Error",
-          description: "Failed to access camera",
+          description: "Failed to access camera. Please check your camera permissions.",
           variant: "destructive",
         });
       }
     }
 
     startCamera();
-
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [selectedDevice]);
+  }, [selectedDevice, aspectRatio, mode]);
 
   const captureImage = async () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -127,7 +129,7 @@ export function CameraCapture({ onCapture, mode, aspectRatio = 4/3, onClose }: C
       if (onClose) {
         setTimeout(() => {
           onClose();
-        }, 500); // Small delay to show the capture feedback
+        }, 500);
       }
     } catch (error) {
       console.error('Error capturing image:', error);
@@ -149,18 +151,26 @@ export function CameraCapture({ onCapture, mode, aspectRatio = 4/3, onClose }: C
         <h3 className="text-lg font-semibold">
           {mode === 'person' ? 'Capture Person Photo' : 'Capture Document'}
         </h3>
-        <Select value={selectedDevice} onValueChange={setSelectedDevice}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Select camera" />
-          </SelectTrigger>
-          <SelectContent>
-            {devices.map((device) => (
-              <SelectItem key={device.deviceId} value={device.deviceId}>
-                {device.label || `Camera ${device.deviceId.slice(0, 4)}`}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {devices.length > 0 && (
+          <Select 
+            value={selectedDevice} 
+            onValueChange={setSelectedDevice}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select camera" />
+            </SelectTrigger>
+            <SelectContent>
+              {devices.map((device) => (
+                <SelectItem 
+                  key={device.deviceId} 
+                  value={device.deviceId || 'default'}
+                >
+                  {device.label || `Camera ${device.deviceId.slice(0, 4)}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       <div className="relative aspect-[4/3] bg-black rounded-lg overflow-hidden">
@@ -183,7 +193,7 @@ export function CameraCapture({ onCapture, mode, aspectRatio = 4/3, onClose }: C
 
       <div className="flex justify-center space-x-4">
         {!capturedImage ? (
-          <Button onClick={captureImage}>
+          <Button onClick={captureImage} disabled={!selectedDevice}>
             <Camera className="w-4 h-4 mr-2" />
             Capture
           </Button>
