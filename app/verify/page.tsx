@@ -9,6 +9,7 @@ import { VerificationTypeSelect } from "@/components/verification/type-select";
 import { CountrySelect } from "@/components/verification/country-select";
 import { VerificationMethodSelect } from "@/components/verification/method-select";
 import { VerificationForm } from "@/components/verification/forms/verification-form";
+import { useVerificationStore } from "@/lib/store/verification";
 import { 
   VerificationType, 
   VerificationMethod,
@@ -28,6 +29,7 @@ export default function VerificationPage() {
   const [documents, setDocuments] = useState<VerificationDocuments>({});
   const router = useRouter();
   const { toast } = useToast();
+  const setVerification = useVerificationStore((state) => state.setVerification);
 
   const handleVerificationFormSubmit = async (formData: any) => {
     try {
@@ -41,8 +43,14 @@ export default function VerificationPage() {
         throw new Error("Failed to submit verification");
       }
 
-      const { verificationId } = await response.json();
-      router.push(`/verify/payment/${verificationId}`);
+      const data = await response.json();
+      
+      // Store verification details
+      if (data.verification) {
+        setVerification(data.verificationId, data.verification);
+      }
+
+      router.push(`/verify/payment/${data.verificationId}`);
     } catch (error) {
       toast({
         title: "Error",

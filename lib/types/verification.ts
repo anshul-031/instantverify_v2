@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 // Core verification types
 export type VerificationType = 
@@ -43,6 +43,9 @@ export interface VerificationFormData {
   method: VerificationMethod;
   documents?: VerificationDocuments;
   additionalInfo?: {
+    name?: string;
+    email?: string;
+    phone?: string;
     aadhaarNumber?: string;
     drivingLicenseNumber?: string;
     voterIdNumber?: string;
