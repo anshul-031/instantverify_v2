@@ -7,17 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Camera, AlertTriangle, FileUp } from "lucide-react";
 import { CameraCapture } from "./camera/camera-capture";
-import { VerificationMethod } from '@/lib/types/verification';
+import { VerificationMethod, VerificationDocuments } from '@/lib/types/verification';
 
 interface Props {
   method: VerificationMethod;
+  onDocumentsChange: (docs: VerificationDocuments) => void;
   onPersonPhotoChange: (file: File) => void;
+  documents: VerificationDocuments;
   personPhotoUrl: string | null;
   isSubmitting?: boolean;
 }
 
 export function DocumentSection({
+  method,
+  onDocumentsChange,
   onPersonPhotoChange,
+  documents,
   personPhotoUrl,
   isSubmitting
 }: Props) {
