@@ -14,18 +14,28 @@ export async function addMetadataToImage(canvas: HTMLCanvasElement): Promise<voi
     locationText = 'Location: Unavailable';
   }
 
-  // Configure text style
-  context.fillStyle = 'rgba(0, 0, 0, 0.5)';
-  context.fillRect(0, canvas.height - 60, canvas.width, 60);
+  // Add metadata directly using canvas context
+  const fontSize = 14;
+  const padding = 10;
+  const textHeight = fontSize + padding;
+  const bgHeight = textHeight * 2 + padding * 2;
 
+  // Add semi-transparent background
+  context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+  context.fillRect(0, canvas.height - bgHeight, canvas.width, bgHeight);
+
+  // Configure text style
   context.fillStyle = 'white';
-  context.font = '14px Arial';
+  context.font = `${fontSize}px Arial`;
   context.textAlign = 'left';
   context.textBaseline = 'middle';
 
   // Add timestamp and location
-  context.fillText(`Captured: ${timestamp}`, 10, canvas.height - 40);
-  context.fillText(locationText, 10, canvas.height - 20);
+  const y1 = canvas.height - bgHeight + textHeight;
+  const y2 = y1 + textHeight;
+  
+  context.fillText(`Captured: ${timestamp}`, padding, y1);
+  context.fillText(locationText, padding, y2);
 }
 
 function getCurrentPosition(): Promise<GeolocationPosition> {
