@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prisma:generate": "prisma generate",
-    "build": "npm run prisma:generate && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -45,7 +44,7 @@
     "@types/uuid": "^9.0.8",
     "autoprefixer": "10.4.15",
     "bcryptjs": "^2.4.3",
-    "canvas": "^2.10.0",
+    "canvas": "^2.11.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
@@ -75,6 +74,7 @@
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^9.0.1",
     "vaul": "^0.9.9",
+    "winston": "^3.17.0",
     "zod": "^3.23.8",
     "zustand": "^4.5.2"
   },
@@ -83,8 +83,5 @@
     "@types/react": "18.3.12",
     "prisma": "^5.10.2",
     "typescript": "5.7.2"
-  },
-  "engines": {
-  "node": "18.x"
-}
+  }
 }

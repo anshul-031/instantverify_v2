@@ -2,94 +2,117 @@ import { NextResponse } from 'next/server';
 import { verificationResponseSchema } from '@/lib/validations/verification';
 import { paymentService } from '@/lib/services/payment';
 import { calculateVerificationPrice } from '@/lib/utils/verification';
-import { VerificationDetails } from '@/lib/types/verification';
+import { withLogging } from '@/lib/middleware/logging';
+import logger from '@/lib/utils/logger';
 
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  try {
-    const { id } = params;
-    const verification = await request.json();
+  return withLogging(request, async (req) => {
+    try {
+      const { id } = params;
+      const verification = await req.json();
 
-    // Validate verification data
-    const validatedData = verificationResponseSchema.parse({
-      ...verification,
-      id,
-      status: 'payment-pending',
-      updatedAt: new Date().toISOString(),
-    });
+      logger.debug('Creating payment order', { verificationId: id });
 
-    // Calculate price
-    const pricing = calculateVerificationPrice(validatedData.method);
+      // Validate verification data
+      const validatedData = verificationResponseSchema.parse({
+        ...verification,
+        id,
+        status: 'payment-pending',
+        updatedAt: new Date().toISOString(),
+      });
 
-    // Create payment order with truncated receipt
-    const receiptId = `verify_${id.slice(0, 32)}`; // Ensure total length ≤ 40
-    const order = await paymentService.createOrder({
-      amount: pricing.total,
-      currency: 'INR',
-      receipt: receiptId,
-      notes: {
-        verificationId: id,
-        type: validatedData.type,
-        method: validatedData.method,
-      },
-    });
+      // Calculate price
+      const pricing = calculateVerificationPrice(validatedData.method);
 
-    // Return order details along with verification
-    return NextResponse.json({
-      ...validatedData,
-      payment: {
+      // Create payment order
+      const receiptId = `verify_${id.slice(0, 32)}`;
+      const order = await paymentService.createOrder({
+        amount: pricing.total,
+        currency: 'INR',
+        receipt: receiptId,
+        notes: {
+          verificationId: id,
+          type: validatedData.type,
+          method: validatedData.method,
+        },
+      });
+
+      logger.info('Payment order created', { 
         orderId: order.id,
-        amount: order.amount,
-        currency: order.currency,
-      },
-      keyId: process.env.RAZORPAY_KEY_ID,
-    });
-  } catch (error) {
-    console.error('Payment initiation error:', error);
-    return NextResponse.json(
-      { error: 'Failed to initiate payment' },
-      { status: 500 }
-    );
-  }
+        verificationId: id 
+      });
+
+      return NextResponse.json({
+        ...validatedData,
+        payment: {
+          orderId: order.id,
+          amount: order.amount,
+          currency: order.currency,
+        },
+        keyId: process.env.RAZORPAY_KEY_ID,
+      });
+    } catch (error) {
+      logger.error('Payment initiation error:', error);
+      return NextResponse.json(
+        { error: 'Failed to initiate payment' },
+        { status: 500 }
+      );
+    }
+  });
 }
 
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  try {
-    const { id } = params;
-    const { orderId, paymentId, signature } = await request.json();
+  return withLogging(request, async (req) => {
+    try {
+      const { id } = params;
+      const { orderId, paymentId, signature } = await req.json();
 
-    // Verify payment signature
-    const isValid = await paymentService.verifyPayment({
-      orderId,
-      paymentId,
-      signature,
-    });
+      logger.debug('Verifying payment', { 
+        verificationId: id,
+        orderId,
+        paymentId 
+      });
 
-    if (!isValid) {
+      // Verify payment signature
+      const isValid = await paymentService.verifyPayment({
+        orderId,
+        paymentId,
+        signature,
+      });
+
+      if (!isValid) {
+        logger.warn('Invalid payment signature', { 
+          verificationId: id,
+          orderId 
+        });
+        return NextResponse.json(
+          { error: 'Invalid payment signature' },
+          { status: 400 }
+        );
+      }
+
+      logger.info('Payment verified successfully', { 
+        verificationId: id,
+        orderId 
+      });
+
+      return NextResponse.json({
+        id,
+        status: 'payment-complete' as const,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error('Payment verification error:', error);
       return NextResponse.json(
-        { error: 'Invalid payment signature' },
-        { status: 400 }
+        { error: 'Failed to verify payment' },
+        { status: 500 }
       );
     }
-
-    // Update verification status
-    const verification = {
-      id,
-      status: 'payment-complete' as const,
-      updatedAt: new Date().toISOString(),
-    };
-
-    return NextResponse.json(verification);
-  } catch (error) {
-    console.error('Payment verification error:', error);
-    return NextResponse.json(
-      { error: 'Failed to verify payment' },
-      { status: 500 }
-    );
-  }
+  });
 }
