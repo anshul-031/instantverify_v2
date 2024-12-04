@@ -16,6 +16,7 @@ const colors = {
   debug: 'white',
 };
 
+// Create logger with only console transport for cloud environments
 const logger = createLogger({
   levels: logLevels,
   format: format.combine(
@@ -26,14 +27,31 @@ const logger = createLogger({
     )
   ),
   transports: [
-    new transports.Console(),
-    new transports.File({
-      filename: 'logs/error.log',
-      level: 'error',
-    }),
-    new transports.File({ filename: 'logs/combined.log' }),
+    new transports.Console({
+      format: format.combine(
+        format.colorize(),
+        format.simple()
+      )
+    })
   ],
 });
+
+// Add file transports only if in development and file system is accessible
+if (process.env.NODE_ENV === 'development') {
+  try {
+    logger.add(new transports.File({
+      filename: 'logs/error.log',
+      level: 'error',
+      handleExceptions: true,
+    }));
+    logger.add(new transports.File({
+      filename: 'logs/combined.log',
+      handleExceptions: true,
+    }));
+  } catch (error) {
+    logger.warn('Unable to create log files, falling back to console only logging');
+  }
+}
 
 export class APILogger {
   static logRequest(method: string, url: string, body?: any) {
