@@ -1,0 +1,15 @@
+{
+    "code": 200,
+    "timestamp": 1732650484699,
+    "transaction_id": "a382fbf5-31ca-4ec3-8265-38176316b56c",
+    "sub_code": "SUCCESS",
+    "message": "Passport verification successful",
+    "data": {
+        "file_number": "BO05C4106183819",
+        "name": "ANSHUL Goel",
+        "dob": "1986-05-31",
+        "application_type": "NORMAL",
+        "application_received_date": null,
+        "status": "VALID"
+    }
+}

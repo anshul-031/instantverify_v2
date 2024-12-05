@@ -1,0 +1,51 @@
+[
+    {
+        "action": "verify_with_source",
+        "completed_at": "2024-12-05T13:01:25+05:30",
+        "created_at": "2024-12-05T13:01:25+05:30",
+        "group_id": "8e16424a-58fc-4ba4-ab20-5bc8e7c3c41e",
+        "request_id": "424bfd2e-101f-4f63-af66-37ebf7d0028f",
+        "result": {
+            "source_output": {
+                "address": "H.NO. 27/421 Goregaon , PS GOREGAON EAST MUMBAI",
+                "badge_details": null,
+                "card_serial_no": null,
+                "city": null,
+                "cov_details": [
+                    {
+                        "category": null,
+                        "cov": "MCWG",
+                        "issue_date": "2014-08-12"
+                    },
+                    {
+                        "category": null,
+                        "cov": "LMV",
+                        "issue_date": "2014-08-12"
+                    }
+                ],
+                "date_of_issue": "2014-08-12",
+                "date_of_last_transaction": null,
+                "dl_status": "Active",
+                "dob": "1986-05-31",
+                "face_image": null,
+                "gender": "M",
+                "hazardous_valid_till": null,
+                "hill_valid_till": null,
+                "id_number": "UP1220140017372",
+                "issuing_rto_name": "ASST.RTO,MUMBAI",
+                "last_transacted_at": null,
+                "name": "ANSHUL GOEL",
+                "nt_validity_from": "2014-08-12",
+                "nt_validity_to": "2034-08-11",
+                "relatives_name": "VIJAY KUMAR GOEL",
+                "source": "government_website",
+                "status": "id_found",
+                "t_validity_from": null,
+                "t_validity_to": null
+            }
+        },
+        "status": "completed",
+        "task_id": "ac0da11d-4a98-4b7c-bebc-7a4acdb430ca",
+        "type": "ind_driving_license"
+    }
+]

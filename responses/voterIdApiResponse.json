@@ -1,0 +1,33 @@
+[
+    {
+        "action": "verify_with_source",
+        "completed_at": "2024-12-05T13:12:24+05:30",
+        "created_at": "2024-12-05T13:12:23+05:30",
+        "group_id": "8e16424a-58fc-4ba4-ab20-5bc8e7c3c41e",
+        "request_id": "33a8307f-4f99-4d8f-bc9e-c6901afdd2da",
+        "result": {
+            "source_output": {
+                "ac_no": "14",
+                "date_of_birth": null,
+                "district": "Mumbai",
+                "gender": "M",
+                "house_no": null,
+                "id_number": "IXK2495262",
+                "last_update": null,
+                "name_on_card": "Anshul goel",
+                "part_no": "237",
+                "ps_lat_long": "29.465597107225705-77.7144393324852",
+                "ps_name": "NEW HORIJAN PUBLIC SCHOOL",
+                "rln_name": "vijay kumar goel",
+                "section_no": "2",
+                "source": "NVSP",
+                "st_code": "S24",
+                "state": "Maharashtra",
+                "status": "id_found"
+            }
+        },
+        "status": "completed",
+        "task_id": "fc27b272-2cbe-4883-a198-d9fb8c8462fb",
+        "type": "ind_voter_id"
+    }
+]
