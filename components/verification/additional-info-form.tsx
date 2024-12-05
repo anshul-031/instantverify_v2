@@ -16,14 +16,13 @@ interface Props {
 
 const initialFormState: NonNullable<VerificationDetails['additionalInfo']> = {
   aadhaarNumber: "",
-  drivingLicenseNumber: "",
-  voterIdNumber: "",
-  dateOfBirth: "",
   otp: "",
 };
 
 export function AdditionalInfoForm({ method, onSubmit, isSubmitting }: Props) {
   const [formData, setFormData] = useState(initialFormState);
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,71 +36,67 @@ export function AdditionalInfoForm({ method, onSubmit, isSubmitting }: Props) {
     }));
   };
 
-  const requiresOtp = method.includes("aadhaar");
+  const handleSendOtp = async () => {
+    setSendingOtp(true);
+    try {
+      // Simulate OTP sending
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setShowOtpInput(true);
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  // Only show Aadhaar form for all Aadhaar-based methods
+  const showAadhaarForm = method.includes('aadhaar');
+
+  if (!showAadhaarForm) {
+    return null;
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <h2 className="font-semibold">Additional Information Required</h2>
-
-      {method.includes("aadhaar") && (
-        <div className="space-y-2">
-          <Label htmlFor="aadhaarNumber">Aadhaar Number</Label>
-          <Input
-            id="aadhaarNumber"
-            name="aadhaarNumber"
-            value={formData.aadhaarNumber}
-            onChange={handleChange}
-            pattern="\d{12}"
-            title="Please enter a valid 12-digit Aadhaar number"
-            required
-          />
-        </div>
-      )}
-
-      {method.includes("driving-license") && (
-        <div className="space-y-2">
-          <Label htmlFor="drivingLicenseNumber">Driving License Number</Label>
-          <Input
-            id="drivingLicenseNumber"
-            name="drivingLicenseNumber"
-            value={formData.drivingLicenseNumber}
-            onChange={handleChange}
-            required
-          />
-        </div>
-      )}
-
-      {method.includes("voter-id") && (
-        <div className="space-y-2">
-          <Label htmlFor="voterIdNumber">Voter ID Number</Label>
-          <Input
-            id="voterIdNumber"
-            name="voterIdNumber"
-            value={formData.voterIdNumber}
-            onChange={handleChange}
-            required
-          />
-        </div>
-      )}
-
+      
       <div className="space-y-2">
-        <Label htmlFor="dateOfBirth">Date of Birth</Label>
+        <Label htmlFor="aadhaarNumber">Aadhaar Number</Label>
         <Input
-          id="dateOfBirth"
-          name="dateOfBirth"
-          type="date"
-          value={formData.dateOfBirth}
+          id="aadhaarNumber"
+          name="aadhaarNumber"
+          value={formData.aadhaarNumber}
           onChange={handleChange}
+          pattern="\d{12}"
+          maxLength={12}
+          placeholder="Enter 12-digit Aadhaar number"
+          title="Please enter a valid 12-digit Aadhaar number"
           required
         />
       </div>
 
-      {requiresOtp && (
+      {!showOtpInput && (
+        <Button
+          type="button"
+          onClick={handleSendOtp}
+          disabled={formData.aadhaarNumber.length !== 12 || sendingOtp}
+          className="w-full"
+        >
+          {sendingOtp ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Sending OTP...
+            </>
+          ) : (
+            'Send OTP'
+          )}
+        </Button>
+      )}
+
+      {showOtpInput && (
         <>
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              An OTP will be sent to your Aadhaar-linked mobile number
+              An OTP has been sent to your Aadhaar-linked mobile number
             </AlertDescription>
           </Alert>
 
@@ -113,6 +108,8 @@ export function AdditionalInfoForm({ method, onSubmit, isSubmitting }: Props) {
               value={formData.otp}
               onChange={handleChange}
               pattern="\d{6}"
+              maxLength={6}
+              placeholder="Enter 6-digit OTP"
               title="Please enter a valid 6-digit OTP"
               required
             />
@@ -120,7 +117,11 @@ export function AdditionalInfoForm({ method, onSubmit, isSubmitting }: Props) {
         </>
       )}
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <Button 
+        type="submit" 
+        className="w-full" 
+        disabled={isSubmitting || !showOtpInput}
+      >
         {isSubmitting ? (
           <>
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
