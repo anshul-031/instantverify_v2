@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
 import { resetPasswordSchema } from '@/lib/validations/auth';
-import { hashPassword } from '@/lib/auth/password';
+import { confirmPasswordReset } from '@/lib/services/auth/reset-password';
 import { withLogging } from '@/lib/middleware/logging';
 import logger from '@/lib/utils/logger';
 
@@ -13,30 +12,7 @@ export async function POST(request: Request) {
       
       logger.debug('Password reset confirmation attempt', { token: validatedData.token });
 
-      // Find user by reset token
-      const user = await prisma.user.findUnique({
-        where: { resetPasswordToken: validatedData.token }
-      });
-
-      if (!user) {
-        logger.warn('Invalid reset token used', { token: validatedData.token });
-        return NextResponse.json(
-          { error: 'Invalid or expired reset token' },
-          { status: 400 }
-        );
-      }
-
-      // Hash new password and clear reset token
-      const hashedPassword = await hashPassword(validatedData.password);
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          password: hashedPassword,
-          resetPasswordToken: null
-        }
-      });
-
-      logger.info('Password reset successful', { userId: user.id });
+      await confirmPasswordReset(validatedData.token, validatedData.password);
 
       return NextResponse.json({ 
         success: true,
