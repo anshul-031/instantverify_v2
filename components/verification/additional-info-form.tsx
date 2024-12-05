@@ -2,25 +2,30 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertTriangle } from "lucide-react";
-import { VerificationMethod, VerificationDetails } from "@/lib/types/verification";
+import { VerificationMethod } from "@/lib/types/verification";
+import { AadhaarInput } from "./forms/aadhaar/aadhaar-input";
+import { OtpInput } from "./forms/aadhaar/otp-input";
+
+interface FormData {
+  aadhaarNumber: string;
+  otp: string;
+}
 
 interface Props {
   method: VerificationMethod;
-  onSubmit: (data: NonNullable<VerificationDetails['additionalInfo']>) => Promise<void>;
+  onSubmit: (data: FormData) => Promise<void>;
   isSubmitting: boolean;
 }
 
-const initialFormState: NonNullable<VerificationDetails['additionalInfo']> = {
+const initialFormState: FormData = {
   aadhaarNumber: "",
   otp: "",
 };
 
 export function AdditionalInfoForm({ method, onSubmit, isSubmitting }: Props) {
-  const [formData, setFormData] = useState(initialFormState);
+  const [formData, setFormData] = useState<FormData>(initialFormState);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
 
@@ -29,10 +34,17 @@ export function AdditionalInfoForm({ method, onSubmit, isSubmitting }: Props) {
     onSubmit(formData);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAadhaarChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      aadhaarNumber: value
+    }));
+  };
+
+  const handleOtpChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      otp: value
     }));
   };
 
@@ -58,20 +70,23 @@ export function AdditionalInfoForm({ method, onSubmit, isSubmitting }: Props) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <h2 className="font-semibold">Additional Information Required</h2>
       
-      <div className="space-y-2">
-        <Label htmlFor="aadhaarNumber">Aadhaar Number</Label>
-        <Input
-          id="aadhaarNumber"
-          name="aadhaarNumber"
-          value={formData.aadhaarNumber}
-          onChange={handleChange}
-          pattern="\d{12}"
-          maxLength={12}
-          placeholder="Enter 12-digit Aadhaar number"
-          title="Please enter a valid 12-digit Aadhaar number"
-          required
-        />
-      </div>
+      <Alert>
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          Prerequisites for Aadhaar verification:
+          <ul className="list-disc list-inside mt-2">
+            <li>Valid Aadhaar card</li>
+            <li>Access to Aadhaar-linked mobile number for OTP</li>
+            <li>Clear photos of Aadhaar card (front and back)</li>
+          </ul>
+        </AlertDescription>
+      </Alert>
+
+      <AadhaarInput
+        value={formData.aadhaarNumber}
+        onChange={handleAadhaarChange}
+        disabled={isSubmitting}
+      />
 
       {!showOtpInput && (
         <Button
@@ -92,29 +107,11 @@ export function AdditionalInfoForm({ method, onSubmit, isSubmitting }: Props) {
       )}
 
       {showOtpInput && (
-        <>
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              An OTP has been sent to your Aadhaar-linked mobile number
-            </AlertDescription>
-          </Alert>
-
-          <div className="space-y-2">
-            <Label htmlFor="otp">Aadhaar OTP</Label>
-            <Input
-              id="otp"
-              name="otp"
-              value={formData.otp}
-              onChange={handleChange}
-              pattern="\d{6}"
-              maxLength={6}
-              placeholder="Enter 6-digit OTP"
-              title="Please enter a valid 6-digit OTP"
-              required
-            />
-          </div>
-        </>
+        <OtpInput
+          value={formData.otp}
+          onChange={handleOtpChange}
+          disabled={isSubmitting}
+        />
       )}
 
       <Button 
