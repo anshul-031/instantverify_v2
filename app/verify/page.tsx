@@ -4,130 +4,89 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
 import { VerificationTypeSelect } from "@/components/verification/type-select";
 import { CountrySelect } from "@/components/verification/country-select";
 import { VerificationMethodSelect } from "@/components/verification/method-select";
-import { VerificationForm } from "@/components/verification/forms/verification-form";
-import { useVerificationStore } from "@/lib/store/verification";
-import { 
-  VerificationType, 
-  VerificationMethod,
-  VerificationDocuments 
-} from "@/lib/types/verification";
-
-interface FormData {
-  type?: VerificationType;
-  country?: string;
-  method?: VerificationMethod;
-  documents?: VerificationDocuments;
-}
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
+import { VerificationType, VerificationMethod } from "@/lib/types/verification";
 
 export default function VerificationPage() {
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<FormData>({});
-  const [documents, setDocuments] = useState<VerificationDocuments>({});
+  const [type, setType] = useState<VerificationType>();
+  const [country, setCountry] = useState<string>();
+  const [method, setMethod] = useState<VerificationMethod>();
   const router = useRouter();
-  const { toast } = useToast();
-  const setVerification = useVerificationStore((state) => state.setVerification);
 
-  const handleVerificationFormSubmit = async (formData: any) => {
-    try {
-      const response = await fetch("/api/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to submit verification");
-      }
-
-      const data = await response.json();
-      
-      // Store verification details
-      if (data.verification) {
-        setVerification(data.verificationId, data.verification);
-      }
-
-      router.push(`/verify/payment/${data.verificationId}`);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to submit verification. Please try again.",
-        variant: "destructive",
-      });
+  const handleNext = () => {
+    if (step === 3 && method) {
+      // Route to specific verification page based on method
+      router.push(`/verify/${method}`);
+      return;
     }
+    setStep(step + 1);
+  };
+
+  const handleBack = () => {
+    setStep(step - 1);
   };
 
   const canProceed = () => {
     switch (step) {
       case 1:
-        return !!formData.type;
+        return !!type;
       case 2:
-        return !!formData.country;
+        return !!country;
       case 3:
-        return !!formData.method;
+        return !!method;
       default:
         return false;
     }
   };
 
-  const handlePrevious = () => {
-    if (step > 1) {
-      setStep(step - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (canProceed()) {
-      setStep(step + 1);
-    }
-  };
-
-  const renderStepContent = () => {
+  const renderStep = () => {
     switch (step) {
       case 1:
         return (
-          <VerificationTypeSelect
-            value={formData.type}
-            onChange={(type) => setFormData({ ...formData, type })}
-          />
+          <div className="space-y-6">
+            <h2 className="text-2xl font-semibold">Select Verification Type</h2>
+            <VerificationTypeSelect
+              value={type}
+              onChange={setType}
+            />
+          </div>
         );
       case 2:
         return (
-          <CountrySelect
-            value={formData.country}
-            onChange={(country) => setFormData({ ...formData, country })}
-          />
+          <div className="space-y-6">
+            <h2 className="text-2xl font-semibold">Select Country</h2>
+            <CountrySelect
+              value={country}
+              onChange={setCountry}
+            />
+          </div>
         );
       case 3:
+        if (!country) return null;
         return (
-          <VerificationMethodSelect
-            value={formData.method}
-            country={formData.country}
-            onChange={(method) => setFormData({ ...formData, method })}
-          />
+          <div className="space-y-6">
+            <h2 className="text-2xl font-semibold">Select Verification Method</h2>
+            {country !== "IN" ? (
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Currently, only Indian IDs are supported. Support for other countries will be added soon.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <VerificationMethodSelect
+                value={method}
+                country={country}
+                onChange={setMethod}
+              />
+            )}
+          </div>
         );
-      case 4:
-        if (!formData.type || !formData.country || !formData.method) {
-          return null;
-        }
-        return (
-          <VerificationForm
-            type={formData.type}
-            country={formData.country}
-            method={formData.method}
-            onSubmit={handleVerificationFormSubmit}
-            onBack={() => setStep(3)}
-            initialData={{
-              ...formData,
-              documents
-            }}
-          />
-        );
-      default:
-        return null;
     }
   };
 
@@ -136,33 +95,28 @@ export default function VerificationPage() {
       <div className="max-w-4xl mx-auto">
         <Card className="p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold">Verification Process</h1>
-            <p className="text-gray-600 mt-2">Step {step} of 4</p>
+            <h1 className="text-3xl font-bold">Start Verification</h1>
+            <p className="text-gray-600 mt-2">Step {step} of 3</p>
           </div>
-          
-          <div className="space-y-8">
-            {renderStepContent()}
 
-            {step < 4 && (
-              <div className="flex justify-between pt-6">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handlePrevious}
-                  disabled={step === 1}
-                >
-                  Previous
-                </Button>
-                
-                <Button
-                  type="button"
-                  onClick={handleNext}
-                  disabled={!canProceed()}
-                >
-                  Next
-                </Button>
-              </div>
+          {renderStep()}
+
+          <div className="flex justify-between mt-8">
+            {step > 1 && (
+              <Button
+                variant="outline"
+                onClick={handleBack}
+              >
+                Back
+              </Button>
             )}
+            <Button
+              onClick={handleNext}
+              disabled={!canProceed()}
+              className={step === 1 ? "w-full" : ""}
+            >
+              {step === 3 ? "Start Verification" : "Next"}
+            </Button>
           </div>
         </Card>
       </div>

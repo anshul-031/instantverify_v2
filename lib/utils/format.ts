@@ -7,3 +7,11 @@ export function formatMethodName(method: string): string {
 export function formatSecurityLevel(level: string): string {
   return level.replace(/-/g, ' ');
 }
+
+export function formatDate(date: string): string {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
