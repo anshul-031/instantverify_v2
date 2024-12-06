@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // If user is logged in and trying to access auth pages, redirect to verify
-  if (token && authPages.some(page => pathname.startsWith(page))) {
+  if (token && authPages.some(page => pathname.startsWith(page))&& !pathname.startsWith('/reset-password/confirm')) {
     try {
       await verifyAuth(token);
       return NextResponse.redirect(new URL('/verify', request.url));
