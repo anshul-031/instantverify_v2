@@ -1,0 +1,21 @@
+{
+    "data": {
+        "address": "Addf865FLAT NO R3136, BRIGADE BRICKLANE AGRAHARA BADAVANE, JAKKUR, JAKKUR, Bangalore NORTH Bangalore URBAN, Karnataka 560054 www.ceo.kamataka.gowi",
+        "age": "40",
+        "date_of_birth": "1988-02-09",
+        "district": "BANGALORE",
+        "fathers_name": "Genderromale",
+        "gender": "",
+        "house_number": "865",
+        "id_number": "XXXXXX802",
+        "is_scanned": false,
+        "name_on_card": "Rahul Bhosle",
+        "pincode": "560054",
+        "state": "Karnataka",
+        "street_address": "Addf865Flat No R100, Brigade Bricklane Agrahara Badavane, Jakkur, Jakkur,  North  Urban,   Www.Ceo.Kamataka.Gowi",
+        "year_of_birth": "1988"
+    },
+    "message": "Document processed successfuly",
+    "transaction_id": "6d62b649-0659-4aba-845a-0ce9bd19db80",
+    "code": 200
+}
