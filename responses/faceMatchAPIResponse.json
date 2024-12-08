@@ -1,0 +1,11 @@
+{
+    "code": 200,
+    "timestamp": 1733666682546,
+    "transaction_id": "a22acc66-43df-4353-ba0e-917dac3df5a2",
+    "sub_code": "SUCCESS",
+    "message": "Request processed successfully",
+    "data": {
+        "match": false,
+        "confidence": 15
+    }
+}
