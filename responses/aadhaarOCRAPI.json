@@ -1,0 +1,25 @@
+{
+    "data": {
+        "address": "S/O   Narayan Rao KPHB colony Colony, Near, 518111",
+        "date_of_birth": "",
+        "district": "Guntur",
+        "fathers_name": "Narayan Rao",
+        "gender": "Male",
+        "house_number": "",
+        "id_number": "XXX-XXX-322",
+        "is_scanned": false,
+        "name_on_card": "Rahul Narayan",
+        "pincode": "518111",
+        "state": "Andhra Pradesh",
+        "street_address": "",
+        "year_of_birth": "1988",
+        "name_information": {
+            "name_cleaned": "Rahul Narayan",
+            "match_score": 45,
+            "name_provided": "aadhaar"
+        }
+    },
+    "message": "Document processed successfuly",
+    "transaction_id": "12d889da-76e3-4d14-b4c9-12b260e2e8e6",
+    "code": 200
+}
