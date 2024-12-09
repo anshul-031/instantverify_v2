@@ -1,0 +1,53 @@
+{
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{bearertoken}}",
+                "type": "string"
+            }
+        ]
+    },
+    "method": "POST",
+    "header": [
+        {
+            "key": "Authorization",
+            "value": "{{bearertoken}}",
+            "type": "text"
+        },
+        {
+            "key": "x-api-key",
+            "value": "{{client_secret}}",
+            "type": "text"
+        }
+    ],
+    "body": {
+        "mode": "formdata",
+        "formdata": [
+            {
+                "key": "file_a",
+                "type": "file",
+                "src": "/C:/Users/Jayashree/OneDrive/Pictures/Camera Roll/WIN_20241208_19_33_59_Pro.jpg"
+            },
+            {
+                "key": "file_b",
+                "type": "file",
+                "src": "/C:/Users/Jayashree/Downloads/Voter-id-1.jpg"
+            }
+        ]
+    },
+    "url": {
+        "raw": "https://production.deepvue.tech/v1/facematch",
+        "protocol": "https",
+        "host": [
+            "production",
+            "deepvue",
+            "tech"
+        ],
+        "path": [
+            "v1",
+            "facematch"
+        ]
+    }
+}

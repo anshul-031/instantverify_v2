@@ -1,0 +1,43 @@
+{
+	"method": "POST",
+	"header": [
+		{
+			"key": "",
+			"value": "",
+			"type": "text"
+		},
+		{
+			"key": "",
+			"value": "",
+			"type": "text"
+		}
+	],
+	"body": {
+		"mode": "formdata",
+		"formdata": [
+			{
+				"key": "client_id",
+				"value": "{{client_id}}",
+				"type": "text"
+			},
+			{
+				"key": "client_secret",
+				"value": "{{client_secret}}",
+				"type": "text"
+			}
+		]
+	},
+	"url": {
+		"raw": "https://production.deepvue.tech/v1/authorize",
+		"protocol": "https",
+		"host": [
+			"production",
+			"deepvue",
+			"tech"
+		],
+		"path": [
+			"v1",
+			"authorize"
+		]
+	}
+}

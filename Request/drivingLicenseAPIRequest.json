@@ -1,0 +1,45 @@
+{
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmcmVlX3RpZXJfYW5zaHVsZ29lbDAzMV81NTY0NDVlYWMzIiwiZXhwIjoxNzMyMDk0MDQxfQ.P_wKh3aMT_WQ3bhLaRC7fb_t-EUzxyF3J8h7hsKuh-0",
+				"type": "string"
+			}
+		]
+	},
+	"method": "GET",
+	"header": [
+		{
+			"key": "Authorization",
+			"value": "{{bearertoken}}",
+			"type": "text"
+		},
+		{
+			"key": "x-api-key",
+			"value": "{{client_secret}}",
+			"type": "text"
+		}
+	],
+	"url": {
+		"raw": "https://production.deepvue.tech/v1/verification/get-driving-license?request_id={{Request ID From POST API}}",
+		"protocol": "https",
+		"host": [
+			"production",
+			"deepvue",
+			"tech"
+		],
+		"path": [
+			"v1",
+			"verification",
+			"get-driving-license"
+		],
+		"query": [
+			{
+				"key": "request_id",
+				"value": "{{Request ID From POST API}}"
+			}
+		]
+	}
+}
