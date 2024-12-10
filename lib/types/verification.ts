@@ -27,6 +27,15 @@ export type VerificationMethod =
   | "driving-license"
   | "voter-id";
 
+export interface VerificationMethodInfo {
+  id: VerificationMethod;
+  name: string;
+  description: string;
+  requirements: string[];
+  prerequisites: string[];
+  price: number;
+}
+
 export type VerificationStatus = 
   | "pending"
   | "payment-pending"
