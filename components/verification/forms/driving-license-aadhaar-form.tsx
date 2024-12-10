@@ -90,6 +90,7 @@ export function DrivingLicenseAadhaarForm({
             method="driving-license-aadhaar"
             onUpload={onDocumentsChange}
             existingDocuments={documents}
+            isSubmitting={isSubmitting}
           />
         </div>
       </Card>

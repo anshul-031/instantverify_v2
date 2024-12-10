@@ -1,180 +1,224 @@
 "use client";
 
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FileUp, AlertTriangle, X, Camera } from "lucide-react";
-import { VerificationMethod, VerificationDocuments } from "@/lib/types/verification";
-import { convertFileToFileData } from "@/lib/api/verification";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { AlertTriangle, Camera, Upload, X } from "lucide-react";
 import { CameraCapture } from "./camera/camera-capture";
-import { documentRequirements } from "@/lib/data/document-requirements";
+import { useToast } from "@/components/ui/use-toast";
+import { UPLOAD_CONFIG } from "@/lib/api/upload/config";
+import { VerificationDocuments } from "@/lib/types/verification";
 
 interface Props {
-  method: VerificationMethod;
-  onUpload: (documents: VerificationDocuments) => void;
+  onUpload: (docs: VerificationDocuments) => void;
+  maxFiles?: number;
+  accept?: string;
+  isSubmitting?: boolean;
   existingDocuments?: VerificationDocuments;
+  method?: string;
 }
 
-export function DocumentUpload({ method, onUpload, existingDocuments }: Props) {
-  const [files, setFiles] = useState<File[]>(() => {
-    if (!existingDocuments?.governmentId) return [];
-    return existingDocuments.governmentId instanceof Array && existingDocuments.governmentId[0] instanceof File 
-      ? existingDocuments.governmentId as File[]
-      : [];
-  });
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+interface UploadResponse {
+  urls: string[]; // Assuming the response has a `urls` property that is an array of strings
+}
 
-  const requirement = documentRequirements[method];
+export function DocumentUpload({
+  onUpload,
+  maxFiles = UPLOAD_CONFIG.maxFiles,
+  accept = "image/*,application/pdf",
+  isSubmitting = false,
+  existingDocuments,
+}: Props) {
+  const [files, setFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      try {
-        setUploading(true);
-        setError(null);
-        const newFiles = Array.from(e.target.files);
-        
-        // Validate file sizes
-        const maxSize = 5 * 1024 * 1024; // 5MB
-        const invalidFiles = newFiles.filter(file => file.size > maxSize);
-        if (invalidFiles.length > 0) {
-          throw new Error('Files must be less than 5MB');
-        }
+    if (!e.target.files?.length) return;
 
-        // Check max files limit
-        if (files.length + newFiles.length > requirement.maxFiles) {
-          throw new Error(`Maximum ${requirement.maxFiles} files allowed`);
-        }
-
-        const updatedFiles = [...files, ...newFiles];
-        setFiles(updatedFiles);
-        
-        // Convert File objects to FileData before passing to parent
-        onUpload({ 
-          governmentId: updatedFiles.map(convertFileToFileData)
-        });
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to upload files');
-      } finally {
-        setUploading(false);
-      }
-    }
-  };
-
-  const handleCameraCapture = (file: File) => {
-    if (files.length >= requirement.maxFiles) {
-      setError(`Maximum ${requirement.maxFiles} files allowed`);
+    const newFiles = Array.from(e.target.files);
+    if (files.length + newFiles.length > maxFiles) {
+      toast({
+        title: "Error",
+        description: `Maximum ${maxFiles} files allowed`,
+        variant: "destructive",
+      });
       return;
     }
 
-    const updatedFiles = [...files, file];
-    setFiles(updatedFiles);
-    onUpload({ 
-      governmentId: updatedFiles.map(convertFileToFileData)
-    });
-    setIsDialogOpen(false);
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      newFiles.forEach(file => formData.append('files', file));
+
+      const response = await fetch('/api/verify/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      const { urls }: UploadResponse = await response.json(); // Specify the type of the response here
+
+      setFiles(prev => [...prev, ...newFiles]);
+      
+      // Convert URLs to VerificationDocuments format
+      const docs: VerificationDocuments = {
+        governmentId: urls.map((url: string) => ({ // Explicitly type `url` as a string
+          url,
+          type: "document",
+          name: "Government ID",
+          size: 0
+        }))
+      };
+      
+      onUpload(docs);
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : "Failed to upload files",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const removeFile = (index: number) => {
-    const updatedFiles = files.filter((_, i) => i !== index);
-    setFiles(updatedFiles);
-    onUpload({ 
-      governmentId: updatedFiles.map(convertFileToFileData)
-    });
+  const handleRemove = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+    if (existingDocuments?.governmentId) {
+      const updatedDocs = {
+        ...existingDocuments,
+        governmentId: existingDocuments.governmentId.filter((_, i) => i !== index)
+      };
+      onUpload(updatedDocs);
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-2">
-        <FileUp className="h-5 w-5 text-primary" />
-        <h2 className="text-xl font-semibold">{requirement.title}</h2>
-      </div>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
+    <div className="space-y-4">
       <Alert>
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
-          {requirement.description}. Maximum file size is 5MB per file.
-          {files.length > 0 && (
-            <p className="mt-2">
-              Uploaded {files.length} of {requirement.maxFiles} files
-            </p>
-          )}
+          Please upload clear photos or scanned copies:
+          <ul className="list-disc list-inside mt-2">
+            <li>Maximum file size: {UPLOAD_CONFIG.maxFileSize / (1024 * 1024)}MB</li>
+            <li>Supported formats: JPG, PNG, PDF</li>
+            <li>Maximum {maxFiles} files allowed</li>
+          </ul>
         </AlertDescription>
       </Alert>
 
-      <Card className="p-6">
-        <div className="space-y-4">
-          <Label>Government ID Documents</Label>
-          <div className="flex items-center space-x-4">
-            <div className="flex-1">
-              <Input
-                type="file"
-                accept="image/*,application/pdf"
-                multiple
-                onChange={handleFileChange}
-                disabled={uploading || files.length >= requirement.maxFiles}
-              />
+      {files.map((file, index) => (
+        <div key={index} className="relative">
+          {file.type.startsWith('image/') ? (
+            <img
+              src={URL.createObjectURL(file)}
+              alt={file.name}
+              className="w-full h-48 object-cover rounded-lg"
+            />
+          ) : (
+            <div className="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center">
+              <p className="text-gray-500">{file.name}</p>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" disabled={files.length >= requirement.maxFiles}>
-                  <Camera className="w-4 h-4 mr-2" />
-                  Use Camera
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-3xl">
-                <CameraCapture
-                  onCapture={handleCameraCapture}
-                  mode="document"
-                  aspectRatio={1.4}
-                />
-              </DialogContent>
-            </Dialog>
+          )}
+          <Button
+            type="button"
+            variant="destructive"
+            size="icon"
+            className="absolute top-2 right-2"
+            onClick={() => handleRemove(index)}
+            disabled={isSubmitting}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
+
+      {files.length < maxFiles && (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <input
+              type="file"
+              accept={accept}
+              onChange={handleFileChange}
+              className="hidden"
+              id="file-upload"
+              multiple
+              disabled={isUploading || isSubmitting}
+            />
+            <Label
+              htmlFor="file-upload"
+              className="flex flex-col items-center justify-center h-32 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary transition-colors"
+            >
+              <Upload className="h-6 w-6 mb-2" />
+              <span className="text-sm">
+                {isUploading ? "Uploading..." : "Upload Files"}
+              </span>
+            </Label>
           </div>
 
-          {uploading && (
-            <div className="flex items-center justify-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
-              <span className="ml-2">Uploading...</span>
-            </div>
-          )}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-32"
+                disabled={isUploading || isSubmitting}
+              >
+                <Camera className="h-6 w-6 mr-2" />
+                Use Camera
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl">
+              <CameraCapture
+                onCapture={async (file) => {
+                  const formData = new FormData();
+                  formData.append('files', file);
 
-          {files.length > 0 && (
-            <ul className="space-y-2">
-              {files.map((file, index) => (
-                <li key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                  <div className="flex items-center">
-                    <FileUp className="h-4 w-4 mr-2" />
-                    <span className="text-sm text-gray-600">
-                      {file.name} ({(file.size / 1024 / 1024).toFixed(2)}MB)
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeFile(index)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
+                  try {
+                    const response = await fetch('/api/verify/upload', {
+                      method: 'POST',
+                      body: formData
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('Failed to upload captured photo');
+                    }
+
+                    const { urls }: UploadResponse = await response.json(); // Specify the type of the response here
+                    setFiles(prev => [...prev, file]);
+                    
+                    const docs: VerificationDocuments = {
+                      governmentId: urls.map((url: string) => ({ // Explicitly type `url` as a string
+                        url,
+                        type: "document",
+                        name: "Government ID",
+                        size: file.size
+                      }))
+                    };
+                    
+                    onUpload(docs);
+                  } catch (error) {
+                    toast({
+                      title: "Upload Failed",
+                      description: "Failed to upload captured photo",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                mode="document"
+                aspectRatio={1.6}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
-      </Card>
+      )}
     </div>
   );
 }
