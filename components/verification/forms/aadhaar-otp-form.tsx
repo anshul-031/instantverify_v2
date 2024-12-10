@@ -54,7 +54,7 @@ export function AadhaarOtpForm({
           </div>
 
           <DocumentUpload
-            method="aadhaar-otp"
+            method="advanced-aadhaar"
             onUpload={onDocumentsChange}
             existingDocuments={documents}
           />

@@ -6,19 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FileUp, AlertTriangle, Loader2, X, Camera } from "lucide-react";
+import { FileUp, AlertTriangle, X, Camera } from "lucide-react";
 import { VerificationMethod, VerificationDocuments } from "@/lib/types/verification";
+import { convertFileToFileData } from "@/lib/api/verification";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { CameraCapture } from "./camera/camera-capture";
+import { documentRequirements } from "@/lib/data/document-requirements";
 
 interface Props {
   method: VerificationMethod;
   onUpload: (documents: VerificationDocuments) => void;
   existingDocuments?: VerificationDocuments;
-  disabled?: boolean;
 }
 
-export function DocumentUpload({ method, onUpload, existingDocuments, disabled }: Props) {
+export function DocumentUpload({ method, onUpload, existingDocuments }: Props) {
   const [files, setFiles] = useState<File[]>(() => {
     if (!existingDocuments?.governmentId) return [];
     return existingDocuments.governmentId instanceof Array && existingDocuments.governmentId[0] instanceof File 
@@ -29,8 +30,7 @@ export function DocumentUpload({ method, onUpload, existingDocuments, disabled }
   const [error, setError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const maxFiles = method.includes('aadhaar') ? 2 : 4;
-  const acceptedTypes = "image/*,application/pdf";
+  const requirement = documentRequirements[method];
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -47,15 +47,16 @@ export function DocumentUpload({ method, onUpload, existingDocuments, disabled }
         }
 
         // Check max files limit
-        if (files.length + newFiles.length > maxFiles) {
-          throw new Error(`Maximum ${maxFiles} files allowed`);
+        if (files.length + newFiles.length > requirement.maxFiles) {
+          throw new Error(`Maximum ${requirement.maxFiles} files allowed`);
         }
 
         const updatedFiles = [...files, ...newFiles];
         setFiles(updatedFiles);
         
+        // Convert File objects to FileData before passing to parent
         onUpload({ 
-          governmentId: updatedFiles
+          governmentId: updatedFiles.map(convertFileToFileData)
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to upload files');
@@ -66,15 +67,15 @@ export function DocumentUpload({ method, onUpload, existingDocuments, disabled }
   };
 
   const handleCameraCapture = (file: File) => {
-    if (files.length >= maxFiles) {
-      setError(`Maximum ${maxFiles} files allowed`);
+    if (files.length >= requirement.maxFiles) {
+      setError(`Maximum ${requirement.maxFiles} files allowed`);
       return;
     }
 
     const updatedFiles = [...files, file];
     setFiles(updatedFiles);
     onUpload({ 
-      governmentId: updatedFiles
+      governmentId: updatedFiles.map(convertFileToFileData)
     });
     setIsDialogOpen(false);
   };
@@ -83,12 +84,17 @@ export function DocumentUpload({ method, onUpload, existingDocuments, disabled }
     const updatedFiles = files.filter((_, i) => i !== index);
     setFiles(updatedFiles);
     onUpload({ 
-      governmentId: updatedFiles
+      governmentId: updatedFiles.map(convertFileToFileData)
     });
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="flex items-center space-x-2">
+        <FileUp className="h-5 w-5 text-primary" />
+        <h2 className="text-xl font-semibold">{requirement.title}</h2>
+      </div>
+
       {error && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
@@ -99,10 +105,10 @@ export function DocumentUpload({ method, onUpload, existingDocuments, disabled }
       <Alert>
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
-          Please upload clear photos or scanned copies. Maximum file size is 5MB per file.
+          {requirement.description}. Maximum file size is 5MB per file.
           {files.length > 0 && (
             <p className="mt-2">
-              Uploaded {files.length} of {maxFiles} files
+              Uploaded {files.length} of {requirement.maxFiles} files
             </p>
           )}
         </AlertDescription>
@@ -110,22 +116,20 @@ export function DocumentUpload({ method, onUpload, existingDocuments, disabled }
 
       <Card className="p-6">
         <div className="space-y-4">
+          <Label>Government ID Documents</Label>
           <div className="flex items-center space-x-4">
             <div className="flex-1">
               <Input
                 type="file"
-                accept={acceptedTypes}
+                accept="image/*,application/pdf"
                 multiple
                 onChange={handleFileChange}
-                disabled={disabled || uploading || files.length >= maxFiles}
+                disabled={uploading || files.length >= requirement.maxFiles}
               />
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  disabled={disabled || files.length >= maxFiles}
-                >
+                <Button variant="outline" disabled={files.length >= requirement.maxFiles}>
                   <Camera className="w-4 h-4 mr-2" />
                   Use Camera
                 </Button>
@@ -142,7 +146,7 @@ export function DocumentUpload({ method, onUpload, existingDocuments, disabled }
 
           {uploading && (
             <div className="flex items-center justify-center py-4">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
               <span className="ml-2">Uploading...</span>
             </div>
           )}
@@ -162,7 +166,6 @@ export function DocumentUpload({ method, onUpload, existingDocuments, disabled }
                     size="sm"
                     onClick={() => removeFile(index)}
                     className="text-red-500 hover:text-red-700"
-                    disabled={disabled}
                   >
                     <X className="h-4 w-4" />
                   </Button>

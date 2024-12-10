@@ -1,6 +1,3 @@
-import { z } from 'zod';
-
-// Core verification types
 export type VerificationType = 
   | "tenant" 
   | "maid" 
@@ -9,14 +6,24 @@ export type VerificationType =
   | "other";
 
 export type SecurityLevel = 
-  | "most-advanced" 
-  | "medium-advanced" 
+  | "most-advanced"
+  | "medium-advanced"
   | "less-advanced";
 
-export type VerificationMethod = 
+export type VerificationMethod =
+  // Advanced verifications with OTP
   | "aadhaar-otp"
+  | "advanced-aadhaar"
+  | "advanced-driving-license"
+  | "advanced-voter-id"
+  | "advanced-passport"
   | "driving-license-aadhaar"
   | "voter-id-aadhaar"
+  // Basic verifications  
+  | "basic-driving-license"
+  | "basic-voter-id"
+  | "basic-passport"
+  // Legacy methods for backward compatibility
   | "driving-license"
   | "voter-id";
 
@@ -27,36 +34,58 @@ export type VerificationStatus =
   | "verified"
   | "rejected";
 
+export interface ExtractedInfo {
+  name: string;
+  dateOfBirth: string;
+  gender: string;
+  address: string;
+  photo: string;
+  documentNumber: string;
+  fatherName?: string;
+  motherName?: string;
+  spouseName?: string;
+  issueDate?: string;
+  expiryDate?: string;
+  issuingAuthority?: string;
+}
+
 export interface FileData {
   name: string;
   size: number;
   type: string;
 }
 
+export interface DocumentFiles {
+  aadhaarFront?: File;
+  aadhaarBack?: File;
+  voterIdFront?: File;
+  voterIdBack?: File;
+  drivingLicenseFront?: File;
+  drivingLicenseBack?: File;
+  photo?: File;
+}
+
 export interface VerificationDocuments {
-  governmentId?: (FileData | string)[];
+  governmentId?: FileData[];
+  personPhoto?: FileData;
+  aadhaarFront?: FileData;
+  aadhaarBack?: FileData;
+  voterIdFront?: FileData;
+  voterIdBack?: FileData;
+  drivingLicenseFront?: FileData;
+  drivingLicenseBack?: FileData;
 }
 
 export interface VerificationFormData {
   type: VerificationType;
-  country: string;
   method: VerificationMethod;
-  documents?: VerificationDocuments;
-  additionalInfo?: {
-    name?: string;
-    email?: string;
-    phone?: string;
-    aadhaarNumber?: string;
-    drivingLicenseNumber?: string;
-    voterIdNumber?: string;
-    dateOfBirth?: string;
-    otp?: string;
-  };
+  documents: VerificationDocuments;
+  photo?: File;
+  purpose?: string;
 }
 
 export interface VerificationDetails extends VerificationFormData {
   id: string;
-  securityLevel: SecurityLevel;
   status: VerificationStatus;
   createdAt: string;
   updatedAt: string;

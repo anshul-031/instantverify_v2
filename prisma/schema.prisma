@@ -8,18 +8,42 @@ datasource db {
 }
 
 model User {
-  id                String    @id @default(cuid())
-  email             String    @unique
+  id                String         @id @default(cuid())
+  email             String         @unique
   firstName         String
   lastName          String
-  phone             String    @unique
+  phone             String         @unique
   dateOfBirth       DateTime
   password          String
-  emailVerified     Boolean   @default(false)
-  emailVerifyToken  String?   @unique
-  resetPasswordToken String?  @unique
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  emailVerified     Boolean        @default(false)
+  emailVerifyToken  String?        @unique
+  resetPasswordToken String?       @unique
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  verifications     Verification[]
 
   @@map("users")
+}
+
+model Verification {
+  id              String    @id @default(cuid())
+  type            String    // tenant, maid, driver, etc.
+  method          String    // advanced-aadhaar, basic-passport, etc.
+  status          String    // draft, pending, completed, etc.
+  purpose         String?   // For "other" type
+  documents       Json      // Stores DocumentInfo[]
+  extractedInfo   Json?     // Stores ExtractedInfo
+  ekycInfo        Json?     // Stores ExtractedInfo from EKYC
+  ocrInfo         Json?     // Stores ExtractedInfo from OCR
+  faceMatchScore  Float?
+  otpVerified     Boolean   @default(false)
+  otpRequestTime  DateTime?
+  paymentId       String?   @unique
+  paymentStatus   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@map("verifications")
 }

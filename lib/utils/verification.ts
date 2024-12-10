@@ -1,26 +1,25 @@
 import { VerificationMethod, SecurityLevel } from '@/lib/types/verification';
-import { verificationMethods } from '@/lib/data/countries';
 
 export function getSecurityLevelFromMethod(method: VerificationMethod): SecurityLevel {
-  for (const [level, methods] of Object.entries(verificationMethods)) {
-    if (methods.some(m => m.id === method)) {
-      return level as SecurityLevel;
-    }
+  if (method.startsWith('advanced-') || method.includes('-aadhaar')) {
+    return 'most-advanced';
+  } else if (method.startsWith('basic-')) {
+    return 'less-advanced';
   }
-  return 'less-advanced'; // Default security level
+  return 'medium-advanced';
 }
 
 export function getMethodDetails(method: VerificationMethod) {
-  for (const [level, methods] of Object.entries(verificationMethods)) {
-    const methodDetails = methods.find(m => m.id === method);
-    if (methodDetails) {
-      return {
-        ...methodDetails,
-        securityLevel: level as SecurityLevel
-      };
-    }
-  }
-  return null;
+  const securityLevel = getSecurityLevelFromMethod(method);
+  const methodName = method.split('-').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ');
+
+  return {
+    id: method,
+    name: methodName,
+    securityLevel
+  };
 }
 
 export function formatPrice(amount: number): string {

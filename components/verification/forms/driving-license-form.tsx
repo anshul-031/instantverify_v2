@@ -67,7 +67,7 @@ export function DrivingLicenseForm({
           </div>
 
           <DocumentUpload
-            method="driving-license"
+            method="basic-driving-license"
             onUpload={onDocumentsChange}
             existingDocuments={documents}
           />
