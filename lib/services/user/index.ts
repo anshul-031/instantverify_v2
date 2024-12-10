@@ -5,7 +5,13 @@ export async function getOrCreateTestUser() {
   try {
     // Try to find existing test user
     let user = await prisma.user.findUnique({
-      where: { email: 'test@example.com' }
+      where: { email: 'test@example.com' },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true
+      }
     });
 
     // Create test user if it doesn't exist
@@ -19,6 +25,12 @@ export async function getOrCreateTestUser() {
           dateOfBirth: new Date('1990-01-01'),
           password: 'hashed_password', // In production, this should be properly hashed
           emailVerified: true
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true
         }
       });
       logger.info('Created test user', { userId: user.id });

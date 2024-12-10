@@ -46,5 +46,15 @@ export class VerificationError extends Error {
   ) {
     super(message);
     this.name = 'VerificationError';
+    
+    // Capture stack trace
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, VerificationError);
+    }
+
+    // Preserve original error stack if available
+    if (originalError?.stack) {
+      this.stack = `${this.stack}\nCaused by: ${originalError.stack}`;
+    }
   }
 }

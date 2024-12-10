@@ -1,25 +1,36 @@
+import { storageService } from '@/lib/services/storage';
+import { generateStoragePath } from '@/lib/services/storage/utils';
 import logger from '@/lib/utils/logger';
 import { VerificationDocuments } from '@/lib/types/verification';
 import { UploadParams, UploadResult } from './types/upload';
 
 export async function uploadDocuments({ files, type = 'governmentId' }: UploadParams): Promise<UploadResult> {
   try {
-    const formData = new FormData();
-    files.forEach(file => formData.append('files', file));
+    // Get test user ID (in production, this would come from auth context)
+    const userResponse = await fetch('/api/auth/user');
+    if (!userResponse.ok) {
+      throw new Error('Failed to get user information');
+    }
+    const user = await userResponse.json();
 
-    const response = await fetch('/api/verify/upload', {
-      method: 'POST',
-      body: formData,
+    // Generate storage path based on document type and user ID
+    const storagePath = generateStoragePath(type, user.id);
+
+    // Upload all files to S3
+    const uploadPromises = files.map(file => 
+      storageService.uploadFile(file, storagePath)
+    );
+
+    const uploadResults = await Promise.all(uploadPromises);
+    const urls = uploadResults.map(result => result.url);
+
+    logger.info('Documents uploaded successfully', { 
+      count: files.length,
+      type,
+      userId: user.id 
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to upload documents');
-    }
-
-    const data = await response.json();
-    logger.info('Documents uploaded successfully', { count: files.length });
-
-    return { urls: data.urls };
+    return { urls };
   } catch (error) {
     logger.error('Document upload error:', error);
     throw error;

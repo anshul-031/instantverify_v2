@@ -10,7 +10,7 @@ import { AadhaarInput } from "./aadhaar-input";
 import { DocumentUpload } from "./document-upload";
 import { PhotoCapture } from "./photo-capture";
 import { useToast } from "@/components/ui/use-toast";
-import { VerificationDocuments } from '@/lib/types/verification';
+import { uploadFiles } from "@/lib/utils/upload";
 
 interface Props {
   onSubmit: (data: any) => Promise<void>;
@@ -55,24 +55,39 @@ export function AdvancedAadhaarForm({ onSubmit, isSubmitting }: Props) {
 
   const handlePhotoSubmit = async (photo: File) => {
     try {
+      // Upload all files first
+      const filesToUpload = [
+        formData.documents.aadhaarFront,
+        formData.documents.aadhaarBack,
+        photo
+      ].filter((file): file is File => file !== null);
+
+      const { urls } = await uploadFiles(filesToUpload);
+
+      // Prepare final data with URLs
       const finalData = {
-        ...formData,
-        photo,
+        aadhaarNumber: formData.aadhaarNumber,
         documents: {
           governmentId: [
             {
-              file: formData.documents.aadhaarFront,
+              url: urls[0],
               type: "document",
               name: "Aadhaar Front",
               size: formData.documents.aadhaarFront?.size || 0
             },
             {
-              file: formData.documents.aadhaarBack,
+              url: urls[1],
               type: "document",
               name: "Aadhaar Back",
               size: formData.documents.aadhaarBack?.size || 0
             }
-          ]
+          ],
+          personPhoto: [{
+            url: urls[2],
+            type: "photo",
+            name: "Person Photo",
+            size: photo.size
+          }]
         }
       };
 
@@ -80,7 +95,7 @@ export function AdvancedAadhaarForm({ onSubmit, isSubmitting }: Props) {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to submit verification. Please try again.",
+        description: "Failed to upload files. Please try again.",
         variant: "destructive",
       });
     }

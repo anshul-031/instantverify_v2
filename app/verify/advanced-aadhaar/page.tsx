@@ -1,28 +1,35 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { AdvancedAadhaarForm } from "@/components/verification/forms/advanced-aadhaar/form";
 import { VerificationStatus } from "@/components/verification/status";
 import { useVerificationStore } from "@/lib/store/verification";
 import { submitVerification } from "@/lib/services/verification/submit";
 import { useToast } from "@/components/ui/use-toast";
+import { VerificationType } from "@/lib/types/verification";
 
 export default function AdvancedAadhaarVerificationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const setVerification = useVerificationStore(state => state.setVerification);
+
+  // Get verification type from URL params
+  const type = (searchParams.get("type") || "tenant") as VerificationType;
+  const purpose = searchParams.get("purpose");
 
   const handleSubmit = async (formData: any) => {
     try {
       setIsSubmitting(true);
       
       const verificationData = {
-        type: "advanced-aadhaar",
+        type, // Use the type from URL params
         method: "advanced-aadhaar",
-        ...formData
+        ...formData,
+        ...(type === "other" && { purpose }), // Include purpose only for "other" type
       };
 
       const result = await submitVerification(verificationData);
