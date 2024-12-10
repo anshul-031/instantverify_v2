@@ -1,32 +1,40 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { AadhaarInput } from "./aadhaar-input";
-import { OtpVerification } from "./otp-verification";
 import { DocumentUpload } from "./document-upload";
 import { PhotoCapture } from "./photo-capture";
 import { useToast } from "@/components/ui/use-toast";
+import { VerificationDocuments } from '@/lib/types/verification';
 
 interface Props {
   onSubmit: (data: any) => Promise<void>;
   isSubmitting: boolean;
 }
 
+interface FormData {
+  aadhaarNumber: string;
+  documents: {
+    aadhaarFront: File | null;
+    aadhaarBack: File | null;
+  };
+  photo: File | null;
+}
+
 export function AdvancedAadhaarForm({ onSubmit, isSubmitting }: Props) {
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     aadhaarNumber: "",
-    otp: "",
     documents: {
-      aadhaarFront: null as File | null,
-      aadhaarBack: null as File | null,
+      aadhaarFront: null,
+      aadhaarBack: null,
     },
-    photo: null as File | null,
+    photo: null,
   });
   
   const router = useRouter();
@@ -37,14 +45,12 @@ export function AdvancedAadhaarForm({ onSubmit, isSubmitting }: Props) {
     setStep(2);
   };
 
-  const handleOtpSubmit = (otp: string) => {
-    setFormData(prev => ({ ...prev, otp }));
-    setStep(3);
-  };
-
   const handleDocumentsSubmit = (documents: { aadhaarFront: File; aadhaarBack: File }) => {
-    setFormData(prev => ({ ...prev, documents }));
-    setStep(4);
+    setFormData(prev => ({
+      ...prev,
+      documents
+    }));
+    setStep(3);
   };
 
   const handlePhotoSubmit = async (photo: File) => {
@@ -52,7 +58,24 @@ export function AdvancedAadhaarForm({ onSubmit, isSubmitting }: Props) {
       const finalData = {
         ...formData,
         photo,
+        documents: {
+          governmentId: [
+            {
+              file: formData.documents.aadhaarFront,
+              type: "document",
+              name: "Aadhaar Front",
+              size: formData.documents.aadhaarFront?.size || 0
+            },
+            {
+              file: formData.documents.aadhaarBack,
+              type: "document",
+              name: "Aadhaar Back",
+              size: formData.documents.aadhaarBack?.size || 0
+            }
+          ]
+        }
       };
+
       await onSubmit(finalData);
     } catch (error) {
       toast({
@@ -88,7 +111,6 @@ export function AdvancedAadhaarForm({ onSubmit, isSubmitting }: Props) {
           Please ensure you have:
           <ul className="list-disc list-inside mt-2">
             <li>A valid Aadhaar card</li>
-            <li>Access to your Aadhaar-linked mobile number</li>
             <li>Clear photos of your Aadhaar card (front and back)</li>
             <li>Good lighting for photo capture</li>
           </ul>
@@ -105,15 +127,6 @@ export function AdvancedAadhaarForm({ onSubmit, isSubmitting }: Props) {
         )}
 
         {step === 2 && (
-          <OtpVerification
-            aadhaarNumber={formData.aadhaarNumber}
-            onSubmit={handleOtpSubmit}
-            onBack={() => setStep(1)}
-            isSubmitting={isSubmitting}
-          />
-        )}
-
-        {step === 3 && (
           <DocumentUpload
             onSubmit={handleDocumentsSubmit}
             initialDocuments={formData.documents}
@@ -121,7 +134,7 @@ export function AdvancedAadhaarForm({ onSubmit, isSubmitting }: Props) {
           />
         )}
 
-        {step === 4 && (
+        {step === 3 && (
           <PhotoCapture
             onSubmit={handlePhotoSubmit}
             isSubmitting={isSubmitting}

@@ -1,28 +1,23 @@
-import { VerificationDetails } from '@/lib/types/verification';
+import { VerificationDetails, VerificationStatus } from '@/lib/types/verification';
+import { prisma } from '@/lib/db';
 import logger from '@/lib/utils/logger';
+import { convertVerificationToDetails } from './utils';
 
 export async function processVerification(verification: VerificationDetails): Promise<VerificationDetails> {
   try {
     logger.info('Processing verification', { id: verification.id });
 
-    // Simulate verification processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Update verification status
+    const updatedVerification = await prisma.verification.update({
+      where: { id: verification.id },
+      data: {
+        status: verification.method.includes('aadhaar') ? 'payment-pending' : 'pending',
+        updatedAt: new Date(),
+      },
+    });
 
-    // In a real app, this would:
-    // 1. Validate documents
-    // 2. Verify Aadhaar OTP
-    // 3. Check criminal records
-    // 4. Process biometric data
-
-    const updatedVerification = {
-      ...verification,
-      status: 'verified' as const,
-      updatedAt: new Date().toISOString()
-    };
-
-    logger.info('Verification processed successfully', { id: verification.id });
-
-    return updatedVerification;
+    // Convert Prisma model to VerificationDetails type
+    return convertVerificationToDetails(updatedVerification);
   } catch (error) {
     logger.error('Verification processing failed:', error);
     throw error;

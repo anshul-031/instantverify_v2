@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { VerificationMethod } from "@/lib/types/verification";
+import { ExtractedInfo } from "@/lib/types/deepvue";
 import { AadhaarInput } from "./forms/aadhaar/aadhaar-input";
 import { OtpInput } from "./forms/aadhaar/otp-input";
 
@@ -17,6 +18,7 @@ interface Props {
   method: VerificationMethod;
   onSubmit: (data: FormData) => Promise<void>;
   isSubmitting: boolean;
+  extractedInfo?: ExtractedInfo;
 }
 
 const initialFormState: FormData = {
@@ -24,7 +26,7 @@ const initialFormState: FormData = {
   otp: "",
 };
 
-export function AdditionalInfoForm({ method, onSubmit, isSubmitting }: Props) {
+export function AdditionalInfoForm({ method, onSubmit, isSubmitting, extractedInfo }: Props) {
   const [formData, setFormData] = useState<FormData>(initialFormState);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
@@ -81,6 +83,20 @@ export function AdditionalInfoForm({ method, onSubmit, isSubmitting }: Props) {
           </ul>
         </AlertDescription>
       </Alert>
+
+      {extractedInfo && (
+        <div className="space-y-2">
+          <p className="text-sm text-gray-600">Extracted Information:</p>
+          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+            {Object.entries(extractedInfo).map(([key, value]) => (
+              <div key={key} className="text-sm">
+                <span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}: </span>
+                <span className="text-gray-600">{value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <AadhaarInput
         value={formData.aadhaarNumber}

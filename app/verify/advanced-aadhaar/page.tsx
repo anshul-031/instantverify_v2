@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { AdvancedAadhaarForm } from "@/components/verification/forms/advanced-aadhaar/form";
 import { VerificationStatus } from "@/components/verification/status";
@@ -12,22 +12,17 @@ import { useToast } from "@/components/ui/use-toast";
 export default function AdvancedAadhaarVerificationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { toast } = useToast();
   const setVerification = useVerificationStore(state => state.setVerification);
-
-  const type = searchParams.get("type") as "tenant" | "maid" | "driver" | "matrimonial" | "other";
-  const purpose = searchParams.get("purpose");
 
   const handleSubmit = async (formData: any) => {
     try {
       setIsSubmitting(true);
       
       const verificationData = {
-        type,
+        type: "advanced-aadhaar",
         method: "advanced-aadhaar",
-        ...formData,
-        ...(type === "other" && { purpose }),
+        ...formData
       };
 
       const result = await submitVerification(verificationData);
@@ -35,17 +30,17 @@ export default function AdvancedAadhaarVerificationPage() {
       setVerification(result.id, {
         ...verificationData,
         id: result.id,
-        status: "pending",
+        status: "payment-pending",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
 
       toast({
-        title: "Verification Submitted",
-        description: "Your verification request has been submitted successfully.",
+        title: "Documents Uploaded",
+        description: "Please proceed with payment to continue verification.",
       });
 
-      router.push(`/verify/status/${result.id}`);
+      router.push(`/verify/payment/${result.id}`);
     } catch (error) {
       console.error("Verification submission error:", error);
       toast({
@@ -65,11 +60,11 @@ export default function AdvancedAadhaarVerificationPage() {
           title="Advanced Aadhaar Verification"
           description="Complete your verification using Aadhaar with OTP and eKYC"
           steps={[
-            "Enter Aadhaar details",
-            "Verify with OTP",
-            "Complete eKYC",
             "Upload documents",
-            "Capture photo"
+            "Complete payment",
+            "Verify with OTP",
+            "Confirm information",
+            "View report"
           ]}
           currentStep={1}
         />

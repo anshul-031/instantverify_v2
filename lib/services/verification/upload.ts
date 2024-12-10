@@ -1,29 +1,11 @@
 import logger from '@/lib/utils/logger';
-import { FileData, VerificationDocuments } from '@/lib/types/verification';
+import { VerificationDocuments } from '@/lib/types/verification';
+import { UploadParams, UploadResult } from './types/upload';
 
-interface UploadParams {
-  governmentId?: FileData[];
-  personPhoto?: FileData;
-  photo?: File;
-}
-
-export async function uploadDocuments(params: UploadParams): Promise<VerificationDocuments> {
+export async function uploadDocuments({ files, type = 'governmentId' }: UploadParams): Promise<UploadResult> {
   try {
     const formData = new FormData();
-    
-    if (params.governmentId) {
-      params.governmentId.forEach((doc, index) => {
-        formData.append(`governmentId[${index}]`, JSON.stringify(doc));
-      });
-    }
-
-    if (params.personPhoto) {
-      formData.append('personPhoto', JSON.stringify(params.personPhoto));
-    }
-
-    if (params.photo) {
-      formData.append('photo', params.photo);
-    }
+    files.forEach(file => formData.append('files', file));
 
     const response = await fetch('/api/verify/upload', {
       method: 'POST',
@@ -35,14 +17,22 @@ export async function uploadDocuments(params: UploadParams): Promise<Verificatio
     }
 
     const data = await response.json();
-    logger.info('Documents uploaded successfully');
+    logger.info('Documents uploaded successfully', { count: files.length });
 
-    return {
-      governmentId: data.governmentId,
-      personPhoto: data.personPhoto,
-    };
+    return { urls: data.urls };
   } catch (error) {
     logger.error('Document upload error:', error);
     throw error;
   }
+}
+
+export function mapUrlsToDocuments(urls: string[], type: 'governmentId' | 'personPhoto'): VerificationDocuments {
+  return {
+    [type]: urls.map(url => ({
+      url,
+      type: "document",
+      name: type === 'governmentId' ? 'Government ID' : 'Person Photo',
+      size: 0
+    }))
+  };
 }

@@ -1,12 +1,4 @@
-import { VerificationMethod } from '@/lib/types/verification';
-
-interface VerificationMethodInfo {
-  id: VerificationMethod;
-  name: string;
-  description: string;
-  prerequisites: string[];
-  price: number;
-}
+import { VerificationMethod, VerificationMethodInfo } from '@/lib/types/verification';
 
 interface CountryVerificationMethods {
   name: string;
@@ -28,6 +20,12 @@ export const verificationMethods: Record<string, CountryVerificationMethods> = {
           "Clear photos of Aadhaar card (front and back)",
           "Live photo capture"
         ],
+        requirements: [
+          "Aadhaar number",
+          "OTP verification",
+          "Document photos",
+          "Live photo"
+        ],
         price: 99
       },
       {
@@ -40,6 +38,13 @@ export const verificationMethods: Record<string, CountryVerificationMethods> = {
           "Access to Aadhaar-linked mobile number",
           "Clear photos of both documents",
           "Live photo capture"
+        ],
+        requirements: [
+          "Driving License number",
+          "Aadhaar number",
+          "OTP verification",
+          "Document photos",
+          "Live photo"
         ],
         price: 149
       },
@@ -54,6 +59,13 @@ export const verificationMethods: Record<string, CountryVerificationMethods> = {
           "Clear photos of both documents",
           "Live photo capture"
         ],
+        requirements: [
+          "Voter ID number",
+          "Aadhaar number",
+          "OTP verification",
+          "Document photos",
+          "Live photo"
+        ],
         price: 149
       },
       {
@@ -66,6 +78,13 @@ export const verificationMethods: Record<string, CountryVerificationMethods> = {
           "Access to Aadhaar-linked mobile number",
           "Clear photos of both documents",
           "Live photo capture"
+        ],
+        requirements: [
+          "Passport number",
+          "Aadhaar number",
+          "OTP verification",
+          "Document photos",
+          "Live photo"
         ],
         price: 199
       }
@@ -80,6 +99,11 @@ export const verificationMethods: Record<string, CountryVerificationMethods> = {
           "Clear photos of Driving License (front and back)",
           "Live photo capture"
         ],
+        requirements: [
+          "Driving License number",
+          "Document photos",
+          "Live photo"
+        ],
         price: 49
       },
       {
@@ -91,6 +115,11 @@ export const verificationMethods: Record<string, CountryVerificationMethods> = {
           "Clear photos of Voter ID (front and back)",
           "Live photo capture"
         ],
+        requirements: [
+          "Voter ID number",
+          "Document photos",
+          "Live photo"
+        ],
         price: 49
       },
       {
@@ -101,6 +130,11 @@ export const verificationMethods: Record<string, CountryVerificationMethods> = {
           "Valid Passport",
           "Clear photos of Passport (front and back)",
           "Live photo capture"
+        ],
+        requirements: [
+          "Passport number",
+          "Document photos",
+          "Live photo"
         ],
         price: 79
       }

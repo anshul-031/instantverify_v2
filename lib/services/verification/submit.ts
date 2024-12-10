@@ -1,30 +1,37 @@
 import { VerificationFormData } from '@/lib/types/verification';
-import { uploadDocuments } from './upload';
+import { VerificationSubmitResult } from './types/submit';
+import { VerificationError } from './types/verification';
+import { getOrCreateTestUser } from '../user';
 import logger from '@/lib/utils/logger';
 
-export async function submitVerification(formData: VerificationFormData) {
+export async function submitVerification(formData: VerificationFormData): Promise<VerificationSubmitResult> {
   try {
-    // Upload documents first
-    const documents = await uploadDocuments({
-      governmentId: formData.documents.governmentId,
-      personPhoto: formData.documents.personPhoto,
-      photo: formData.photo
-    });
+    // Get or create test user
+    const user = await getOrCreateTestUser();
+
+    // Prepare verification data
+    const verificationData = {
+      ...formData,
+      type: 'tenant', // Default type for now
+      userId: user.id,
+      verificationMethod: formData.method
+    };
 
     // Submit verification request
-    const response = await fetch('/api/verify/advanced-aadhaar', {
+    const response = await fetch('/api/verify', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        ...formData,
-        documents,
-      }),
+      body: JSON.stringify(verificationData),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to submit verification');
+      const errorData = await response.json();
+      throw new VerificationError(
+        errorData.error || 'Failed to submit verification',
+        'SUBMISSION_FAILED'
+      );
     }
 
     const data = await response.json();
@@ -32,10 +39,17 @@ export async function submitVerification(formData: VerificationFormData) {
 
     return {
       id: data.id,
-      status: 'pending',
+      status: 'pending'
     };
   } catch (error) {
     logger.error('Verification submission error:', error);
-    throw error;
+    if (error instanceof VerificationError) {
+      throw error;
+    }
+    throw new VerificationError(
+      'Failed to submit verification',
+      'UNKNOWN_ERROR',
+      error as Error
+    );
   }
 }

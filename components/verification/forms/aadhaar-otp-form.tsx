@@ -1,11 +1,10 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { DocumentUpload } from "@/components/verification/document-upload";
+import { AadhaarInput } from "./aadhaar/aadhaar-input";
 import { VerificationDocuments } from "@/lib/types/verification";
 
 interface Props {
@@ -39,23 +38,17 @@ export function AadhaarOtpForm({
 
       <Card className="p-6">
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="aadhaar">Aadhaar Number</Label>
-            <Input
-              id="aadhaar"
-              value={aadhaarNumber}
-              onChange={(e) => onAadhaarChange(e.target.value)}
-              pattern="\d{12}"
-              maxLength={12}
-              placeholder="Enter 12-digit Aadhaar number"
-              disabled={isSubmitting}
-              required
-            />
-          </div>
+          <AadhaarInput
+            value={aadhaarNumber}
+            onChange={onAadhaarChange}
+            disabled={isSubmitting}
+          />
 
           <DocumentUpload
-            method="advanced-aadhaar"
             onUpload={onDocumentsChange}
+            maxFiles={2}
+            accept="image/*"
+            isSubmitting={isSubmitting}
             existingDocuments={documents}
           />
         </div>

@@ -1,11 +1,11 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { RadioGroup } from "@/components/ui/radio-group";
 import { Shield } from "lucide-react";
-import { verificationMethods } from "@/lib/data/countries";
+import { verificationMethods } from "@/lib/data/verification-methods";
 import { VerificationMethod } from "@/lib/types/verification";
+import { MethodCard } from "./method-card";
 
 interface Props {
   value?: VerificationMethod;
@@ -32,49 +32,33 @@ export function VerificationMethodSelect({ value, country, onChange }: Props) {
       </div>
 
       <div className="space-y-8">
-        {Object.entries(verificationMethods).map(([level, methods]) => (
-          <div key={level} className="space-y-4">
-            <h3 className="font-medium capitalize">
-              {level.replace("-", " ")} Verification
-            </h3>
-            
-            <RadioGroup
-              value={value}
-              onValueChange={(value) => onChange(value as VerificationMethod)}
-              className="grid grid-cols-1 gap-4"
-            >
-              {methods.map((method) => (
-                <Label
-                  key={method.id}
-                  className="cursor-pointer"
-                  htmlFor={method.id}
-                >
-                  <Card className={`p-4 hover:border-primary transition-colors ${
-                    value === method.id ? "border-primary" : ""
-                  }`}>
-                    <div className="flex items-start space-x-4">
-                      <RadioGroupItem 
-                        value={method.id} 
-                        id={method.id} 
-                        className="mt-1"
-                      />
-                      <div className="flex-1">
-                        <h4 className="font-medium">{method.name}</h4>
-                        <ul className="mt-2 space-y-1">
-                          {method.requirements.map((req, index) => (
-                            <li key={index} className="text-sm text-gray-600">
-                              • {req}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </Card>
-                </Label>
-              ))}
-            </RadioGroup>
-          </div>
-        ))}
+        <div className="space-y-4">
+          <h3 className="font-medium">Advanced Verification</h3>
+          <RadioGroup value={value} onValueChange={(value) => onChange(value as VerificationMethod)}>
+            {verificationMethods.IN.advanced.map((method) => (
+              <MethodCard
+                key={method.id}
+                method={method}
+                isSelected={value === method.id}
+                onSelect={() => onChange(method.id)}
+              />
+            ))}
+          </RadioGroup>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="font-medium">Basic Verification</h3>
+          <RadioGroup value={value} onValueChange={(value) => onChange(value as VerificationMethod)}>
+            {verificationMethods.IN.basic.map((method) => (
+              <MethodCard
+                key={method.id}
+                method={method}
+                isSelected={value === method.id}
+                onSelect={() => onChange(method.id)}
+              />
+            ))}
+          </RadioGroup>
+        </div>
       </div>
     </div>
   );

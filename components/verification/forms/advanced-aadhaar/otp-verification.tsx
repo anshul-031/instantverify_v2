@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { deepvueService } from "@/lib/services/deepvue";
 import {
   InputOTP,
   InputOTPGroup,
@@ -30,25 +31,31 @@ export function OtpVerification({
   const { toast } = useToast();
 
   useEffect(() => {
+    // Generate OTP on component mount
+    generateOtp();
+  }, []);
+
+  useEffect(() => {
     if (timeLeft > 0) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
     }
   }, [timeLeft]);
 
-  const handleResendOtp = async () => {
+  const generateOtp = async () => {
     try {
       setIsResending(true);
-      // Simulate OTP resend
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // For development, we'll use a mock captcha. In production, implement proper captcha handling
+      const mockCaptcha = "mock-captcha-response";
+      await deepvueService.generateAadhaarOtp(aadhaarNumber, mockCaptcha);
       setTimeLeft(30);
       toast({
-        title: "OTP Resent",
-        description: "A new OTP has been sent to your Aadhaar-linked mobile number.",
+        title: "OTP Sent",
+        description: "An OTP has been sent to your Aadhaar-linked mobile number.",
       });
     } catch (error) {
       toast({
-        title: "Failed to resend OTP",
+        title: "Failed to send OTP",
         description: "Please try again later.",
         variant: "destructive",
       });
@@ -84,8 +91,8 @@ export function OtpVerification({
             disabled={isSubmitting}
             render={({ slots }) => (
               <InputOTPGroup className="gap-2">
-                {slots.map((slot, idx) => (
-                  <InputOTPSlot key={idx} {...slot} index={idx} />
+                {slots.map((slot, index) => (
+                  <InputOTPSlot key={index} {...slot} />
                 ))}
               </InputOTPGroup>
             )}
@@ -103,7 +110,7 @@ export function OtpVerification({
               <Button
                 type="button"
                 variant="link"
-                onClick={handleResendOtp}
+                onClick={generateOtp}
                 disabled={isResending}
                 className="p-0 h-auto"
               >

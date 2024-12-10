@@ -3,6 +3,7 @@
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { 
   Home, 
   UserCheck, 
@@ -15,42 +16,49 @@ import { VerificationType } from "@/lib/types/verification";
 interface Props {
   value?: VerificationType;
   onChange: (type: VerificationType) => void;
+  otherPurpose: string;
+  onOtherPurposeChange: (purpose: string) => void;
 }
 
 const verificationTypes = [
   {
-    id: "tenant",
+    id: "tenant" as const,
     name: "Tenant Verification",
     description: "Verify potential tenants before renting your property",
     icon: Home
   },
   {
-    id: "maid",
+    id: "maid" as const,
     name: "Maid Verification",
     description: "Verify domestic help and household staff",
     icon: UserCheck
   },
   {
-    id: "driver",
+    id: "driver" as const,
     name: "Driver Verification",
     description: "Verify drivers before hiring",
     icon: Car
   },
   {
-    id: "matrimonial",
+    id: "matrimonial" as const,
     name: "Matrimonial Verification",
     description: "Verify potential matrimonial matches",
     icon: Heart
   },
   {
-    id: "other",
+    id: "other" as const,
     name: "Other Verification",
     description: "Custom verification for other purposes",
     icon: FileQuestion
   }
 ];
 
-export function VerificationTypeSelect({ value, onChange }: Props) {
+export function VerificationTypeSelect({ 
+  value, 
+  onChange, 
+  otherPurpose, 
+  onOtherPurposeChange 
+}: Props) {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Select Verification Type</h2>
@@ -88,6 +96,20 @@ export function VerificationTypeSelect({ value, onChange }: Props) {
           </Label>
         ))}
       </RadioGroup>
+
+      {value === "other" && (
+        <div className="mt-4">
+          <Label htmlFor="purpose">Verification Purpose</Label>
+          <Input
+            id="purpose"
+            value={otherPurpose}
+            onChange={(e) => onOtherPurposeChange(e.target.value)}
+            placeholder="Please specify the purpose of verification"
+            className="mt-1"
+            required
+          />
+        </div>
+      )}
     </div>
   );
 }

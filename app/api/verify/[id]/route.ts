@@ -1,0 +1,81 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
+import { withLogging } from '@/lib/middleware/logging';
+import logger from '@/lib/utils/logger';
+
+interface Props {
+  params: {
+    id: string;
+  };
+}
+
+export async function GET(request: Request, { params }: Props) {
+  return withLogging(request, async () => {
+    try {
+      const verification = await prisma.verification.findUnique({
+        where: { id: params.id },
+      });
+
+      if (!verification) {
+        return NextResponse.json(
+          { error: 'Verification not found' },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json(verification);
+    } catch (error) {
+      logger.error('Failed to fetch verification:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch verification' },
+        { status: 500 }
+      );
+    }
+  });
+}
+
+export async function PATCH(request: Request, { params }: Props) {
+  return withLogging(request, async (req) => {
+    try {
+      const data = await req.json();
+      
+      const verification = await prisma.verification.update({
+        where: { id: params.id },
+        data: {
+          ...data,
+          updatedAt: new Date(),
+        },
+      });
+
+      logger.info('Verification updated successfully', { id: params.id });
+
+      return NextResponse.json(verification);
+    } catch (error) {
+      logger.error('Failed to update verification:', error);
+      return NextResponse.json(
+        { error: 'Failed to update verification' },
+        { status: 500 }
+      );
+    }
+  });
+}
+
+export async function DELETE(request: Request, { params }: Props) {
+  return withLogging(request, async () => {
+    try {
+      await prisma.verification.delete({
+        where: { id: params.id },
+      });
+
+      logger.info('Verification deleted successfully', { id: params.id });
+
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      logger.error('Failed to delete verification:', error);
+      return NextResponse.json(
+        { error: 'Failed to delete verification' },
+        { status: 500 }
+      );
+    }
+  });
+}

@@ -1,7 +1,8 @@
-import { FileData } from '@/lib/types/verification';
+import { FileData } from '@/lib/types/file';
 
-export function convertFileToFileData(file: File): FileData {
+export function convertFileToFileData(file: File, url: string): FileData {
   return {
+    url,
     name: file.name,
     size: file.size,
     type: file.type

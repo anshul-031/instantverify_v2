@@ -29,17 +29,15 @@ model Verification {
   id              String    @id @default(cuid())
   type            String    // tenant, maid, driver, etc.
   method          String    // advanced-aadhaar, basic-passport, etc.
-  status          String    // draft, pending, completed, etc.
+  status          String    // pending, payment-pending, payment-complete, verified, rejected
   purpose         String?   // For "other" type
-  documents       Json      // Stores DocumentInfo[]
-  extractedInfo   Json?     // Stores ExtractedInfo
-  ekycInfo        Json?     // Stores ExtractedInfo from EKYC
-  ocrInfo         Json?     // Stores ExtractedInfo from OCR
-  faceMatchScore  Float?
+  documents       Json      // Stores uploaded document URLs and metadata
+  metadata        Json?     // Stores additional verification metadata
   otpVerified     Boolean   @default(false)
   otpRequestTime  DateTime?
   paymentId       String?   @unique
   paymentStatus   String?
+  aadhaarNumber   String?   // Added aadhaarNumber field
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   userId          String

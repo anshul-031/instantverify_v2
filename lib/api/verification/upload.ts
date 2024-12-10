@@ -1,44 +1,42 @@
-import { UploadResponse, FileUploadOptions } from './types';
+import logger from '@/lib/utils/logger';
+import { VerificationDocuments } from '@/lib/types/verification';
+import { UploadParams, UploadResult, VerificationError } from './types';
 
-export async function uploadFile({ file, onProgress }: FileUploadOptions): Promise<string> {
-  const formData = new FormData();
-  formData.append('files', file);
-
-  const response = await fetch("/api/verify/upload", {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Upload failed');
-  }
-
-  const data = await response.json();
-  return data.urls[0];
-}
-
-export async function uploadDocuments(files: File[]): Promise<UploadResponse> {
+export async function uploadDocuments({ files, type = 'governmentId' }: UploadParams): Promise<UploadResult> {
   try {
     const formData = new FormData();
-    files.forEach((file) => {
-      formData.append('files', file);
-    });
+    files.forEach(file => formData.append('files', file));
 
-    const response = await fetch("/api/verify/upload", {
-      method: "POST",
+    const response = await fetch('/api/verify/upload', {
+      method: 'POST',
       body: formData,
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Upload failed');
+      throw new VerificationError('Failed to upload documents', 'UPLOAD_FAILED');
     }
 
     const data = await response.json();
+    logger.info('Documents uploaded successfully', { count: files.length });
+
     return { urls: data.urls };
   } catch (error) {
-    console.error('Document upload error:', error);
-    throw error;
+    logger.error('Document upload error:', error);
+    throw error instanceof VerificationError ? error : new VerificationError(
+      'Failed to upload documents',
+      'UPLOAD_FAILED',
+      error as Error
+    );
   }
+}
+
+export function mapUrlsToDocuments(urls: string[], type: 'governmentId' | 'personPhoto'): VerificationDocuments {
+  return {
+    [type]: urls.map(url => ({
+      url,
+      type: "document",
+      name: type === 'governmentId' ? 'Government ID' : 'Person Photo',
+      size: 0
+    }))
+  };
 }

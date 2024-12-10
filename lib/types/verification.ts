@@ -1,3 +1,6 @@
+import { z } from 'zod';
+import { Prisma } from '@prisma/client';
+
 export type VerificationType = 
   | "tenant" 
   | "maid" 
@@ -11,7 +14,6 @@ export type SecurityLevel =
   | "less-advanced";
 
 export type VerificationMethod =
-  // Advanced verifications with OTP
   | "aadhaar-otp"
   | "advanced-aadhaar"
   | "advanced-driving-license"
@@ -19,13 +21,34 @@ export type VerificationMethod =
   | "advanced-passport"
   | "driving-license-aadhaar"
   | "voter-id-aadhaar"
-  // Basic verifications  
   | "basic-driving-license"
   | "basic-voter-id"
   | "basic-passport"
-  // Legacy methods for backward compatibility
   | "driving-license"
   | "voter-id";
+
+export interface VerificationMethodInfo {
+  id: VerificationMethod;
+  name: string;
+  description: string;
+  prerequisites: string[];
+  requirements: string[];
+  price: number;
+}
+
+export interface DocumentInfo {
+  url: string;
+  type: string;
+  name: string;
+  size: number;
+  file?: File;
+}
+
+export interface VerificationDocuments {
+  governmentId?: DocumentInfo[];
+  personPhoto?: DocumentInfo[];
+  [key: string]: DocumentInfo[] | undefined; // Add index signature
+}
 
 export type VerificationStatus = 
   | "pending"
@@ -34,59 +57,29 @@ export type VerificationStatus =
   | "verified"
   | "rejected";
 
-export interface ExtractedInfo {
-  name: string;
-  dateOfBirth: string;
-  gender: string;
-  address: string;
-  photo: string;
-  documentNumber: string;
-  fatherName?: string;
-  motherName?: string;
-  spouseName?: string;
-  issueDate?: string;
-  expiryDate?: string;
-  issuingAuthority?: string;
-}
-
-export interface FileData {
-  name: string;
-  size: number;
-  type: string;
-}
-
-export interface DocumentFiles {
-  aadhaarFront?: File;
-  aadhaarBack?: File;
-  voterIdFront?: File;
-  voterIdBack?: File;
-  drivingLicenseFront?: File;
-  drivingLicenseBack?: File;
-  photo?: File;
-}
-
-export interface VerificationDocuments {
-  governmentId?: FileData[];
-  personPhoto?: FileData;
-  aadhaarFront?: FileData;
-  aadhaarBack?: FileData;
-  voterIdFront?: FileData;
-  voterIdBack?: FileData;
-  drivingLicenseFront?: FileData;
-  drivingLicenseBack?: FileData;
-}
-
 export interface VerificationFormData {
   type: VerificationType;
   method: VerificationMethod;
   documents: VerificationDocuments;
   photo?: File;
   purpose?: string;
+  aadhaarNumber?: string;
 }
 
-export interface VerificationDetails extends VerificationFormData {
+export interface VerificationDetails {
   id: string;
+  type: string;
+  method: string;
   status: VerificationStatus;
+  purpose: string | null;
+  documents: VerificationDocuments;
+  metadata: any;
+  otpVerified: boolean;
+  otpRequestTime: string | null;
+  paymentId: string | null;
+  paymentStatus: string | null;
+  aadhaarNumber: string;
   createdAt: string;
   updatedAt: string;
+  userId: string;
 }
