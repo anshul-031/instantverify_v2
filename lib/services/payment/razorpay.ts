@@ -23,12 +23,16 @@ export class RazorpayService implements PaymentService {
 
   async createOrder(options: CreateOrderOptions): Promise<PaymentOrder> {
     try {
+      logger.debug('Creating Razorpay order', options);
+
       const order = await this.instance.orders.create({
         amount: Math.round(options.amount * 100), // Convert to paise
         currency: options.currency,
         receipt: options.receipt,
         notes: options.notes,
       }) as RazorpayOrderResponse;
+
+      logger.info('Razorpay order created successfully', { orderId: order.id });
 
       return {
         id: order.id,
@@ -49,6 +53,11 @@ export class RazorpayService implements PaymentService {
 
   async verifyPayment(verification: PaymentVerification): Promise<boolean> {
     try {
+      logger.debug('Verifying Razorpay payment', {
+        orderId: verification.orderId,
+        paymentId: verification.paymentId
+      });
+
       const { orderId, paymentId, signature } = verification;
       
       const text = `${orderId}|${paymentId}`;
@@ -59,9 +68,14 @@ export class RazorpayService implements PaymentService {
       const isValid = expectedSignature === signature;
       
       if (!isValid) {
-        logger.warn('Invalid payment signature detected:', {
+        logger.warn('Invalid payment signature detected', {
           orderId,
           paymentId,
+        });
+      } else {
+        logger.info('Payment verified successfully', {
+          orderId,
+          paymentId
         });
       }
 

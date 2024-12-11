@@ -10,14 +10,15 @@ export const razorpayConfigSchema = z.object({
 export type RazorpayConfig = z.infer<typeof razorpayConfigSchema>;
 
 export const razorpayConfig: RazorpayConfig = {
-  keyId: process.env.RAZORPAY_KEY_ID || '',
-  keySecret: process.env.RAZORPAY_KEY_SECRET || '',
+  keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '',
+  keySecret: process.env.NEXT_PUBLIC_RAZORPAY_KEY_SECRET || '',
   webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET,
   currency: 'INR',
 };
 
 export function validateRazorpayConfig(): { isValid: boolean; errors?: string[] } {
   try {
+    console.log(razorpayConfig);
     razorpayConfigSchema.parse(razorpayConfig);
     return { isValid: true };
   } catch (error) {

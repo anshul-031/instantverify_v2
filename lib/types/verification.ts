@@ -47,7 +47,7 @@ export interface DocumentInfo {
 export interface VerificationDocuments {
   governmentId?: DocumentInfo[];
   personPhoto?: DocumentInfo[];
-  [key: string]: DocumentInfo[] | undefined; // Add index signature
+  [key: string]: DocumentInfo[] | undefined;
 }
 
 export type VerificationStatus = 
@@ -66,6 +66,14 @@ export interface VerificationFormData {
   aadhaarNumber?: string;
 }
 
+export interface UserDetails {
+  id: string;
+  email: string;
+  phone: string;
+  firstName: string;
+  lastName: string;
+}
+
 export interface VerificationDetails {
   id: string;
   type: string;
@@ -82,4 +90,5 @@ export interface VerificationDetails {
   createdAt: string;
   updatedAt: string;
   userId: string;
+  user?: UserDetails;
 }
