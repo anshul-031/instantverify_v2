@@ -1,3 +1,29 @@
+export interface AadhaarOCRResponse {
+  code: number;
+  message: string;
+  transaction_id: string;
+  data: {
+    address: string;
+    date_of_birth: string;
+    district: string;
+    fathers_name: string;
+    gender: string;
+    house_number: string;
+    id_number: string;
+    is_scanned: boolean;
+    name_on_card: string;
+    pincode: string;
+    state: string;
+    street_address: string;
+    year_of_birth: string;
+    name_information: {
+      name_cleaned: string;
+      match_score: number;
+      name_provided: string;
+    };
+  };
+}
+
 export interface ExtractedInfo {
   name: string;
   address: string;

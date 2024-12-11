@@ -31,10 +31,17 @@ export default function PaymentPage({ params }: Props) {
   const verification = useVerificationStore(state => 
     state.getVerification(params.id)
   );
+  const setVerification = useVerificationStore(state => state.setVerification);
 
   useEffect(() => {
     if (!verification) {
       router.push('/verify');
+      return;
+    }
+
+    // If payment is already complete, redirect to additional info page
+    if (verification.status === 'payment-complete') {
+      router.push(`/verify/advanced-aadhaar/${params.id}/additional-info`);
       return;
     }
 
@@ -55,7 +62,7 @@ export default function PaymentPage({ params }: Props) {
     };
 
     fetchUserDetails();
-  }, [verification, router]);
+  }, [verification, router, params.id]);
 
   const handlePayment = async () => {
     if (!verification || !isScriptLoaded || !userDetails) return;
@@ -97,17 +104,27 @@ export default function PaymentPage({ params }: Props) {
         },
         handler: async (response: any) => {
           try {
-            const verification = await paymentService.verifyPayment({
+            const verified = await paymentService.verifyPayment({
               orderId: response.razorpay_order_id,
               paymentId: response.razorpay_payment_id,
               signature: response.razorpay_signature,
             });
 
-            if (verification) {
+            if (verified) {
+              // Update verification status in store
+              setVerification(params.id, {
+                ...verification,
+                status: 'payment-complete',
+                paymentId: response.razorpay_payment_id,
+                updatedAt: new Date().toISOString()
+              });
+
               toast({
                 title: "Payment Successful",
                 description: "Your payment has been processed successfully.",
               });
+
+              // Redirect to additional info page
               router.push(`/verify/advanced-aadhaar/${params.id}/additional-info`);
             }
           } catch (error) {
