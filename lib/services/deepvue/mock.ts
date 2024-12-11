@@ -1,11 +1,31 @@
-import { AadhaarOCRResponse, ExtractedInfo } from '@/lib/types/deepvue';
+import { AadhaarOtpResponse, AadhaarVerifyResponse, ExtractedInfo } from '@/lib/types/deepvue';
 import logger from '@/lib/utils/logger';
 
-export function getMockAadhaarOCRResponse(): AadhaarOCRResponse {
-  return require('@/responses/aadhaarOCRAPI.json');
+export function getMockAadhaarOtpResponse(): AadhaarOtpResponse {
+  return require('@/responses/generateOtp.json');
 }
 
-export function transformOCRResponse(response: AadhaarOCRResponse): ExtractedInfo {
+export function getMockAadhaarEkycResponse(): AadhaarVerifyResponse {
+  const ekycData = require('@/responses/aadhaarEkycApiResponse.json');
+  return {
+    success: true,
+    isVerified: true,
+    ekycData: {
+      name: ekycData.data.name,
+      address: ekycData.data.address.careOf + ', ' + ekycData.data.address.locality + ', ' + ekycData.data.address.district + ', ' + ekycData.data.address.state + ' - ' + ekycData.data.address.pin,
+      gender: ekycData.data.gender === 'M' ? 'Male' : 'Female',
+      dateOfBirth: ekycData.data.dateOfBirth,
+      fatherName: ekycData.data.address.careOf.replace('S/O ', ''),
+      photo: ekycData.data.photo,
+      district: ekycData.data.address.district,
+      state: ekycData.data.address.state,
+      pincode: ekycData.data.address.pin,
+      idNumber: ekycData.data.maskedNumber
+    }
+  };
+}
+
+export function transformOCRResponse(response: any): ExtractedInfo {
   logger.debug('Transforming OCR response to ExtractedInfo format');
   
   return {

@@ -8,6 +8,7 @@ import { VerificationMethod } from "@/lib/types/verification";
 import { ExtractedInfo } from "@/lib/types/deepvue";
 import { AadhaarInput } from "./forms/aadhaar/aadhaar-input";
 import { OtpInput } from "./forms/aadhaar/otp-input";
+import { useToast } from "@/components/ui/use-toast";
 
 interface FormData {
   aadhaarNumber: string;
@@ -30,6 +31,7 @@ export function AdditionalInfoForm({ method, onSubmit, isSubmitting, extractedIn
   const [formData, setFormData] = useState<FormData>(initialFormState);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,9 +55,27 @@ export function AdditionalInfoForm({ method, onSubmit, isSubmitting, extractedIn
   const handleSendOtp = async () => {
     setSendingOtp(true);
     try {
-      // Simulate OTP sending
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulate API call
+      const response = await fetch('/api/mock/generate-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aadhaarNumber: formData.aadhaarNumber })
+      });
+
+      const data = await response.json();
+      
+      toast({
+        title: "OTP Sent",
+        description: "An OTP has been sent to your Aadhaar-linked mobile number",
+      });
+
       setShowOtpInput(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send OTP. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setSendingOtp(false);
     }

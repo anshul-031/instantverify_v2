@@ -1,7 +1,11 @@
+"use client";
+
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Props {
   value: string;
@@ -10,6 +14,13 @@ interface Props {
 }
 
 export function OtpInput({ value, onChange, disabled }: Props) {
+  const { toast } = useToast();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value.replace(/\D/g, "").slice(0, 6);
+    onChange(newValue);
+  };
+
   return (
     <div className="space-y-4">
       <Alert>
@@ -20,18 +31,19 @@ export function OtpInput({ value, onChange, disabled }: Props) {
       </Alert>
 
       <div className="space-y-2">
-        <Label htmlFor="otp">Aadhaar OTP</Label>
+        <Label htmlFor="otp">Enter OTP</Label>
         <Input
           id="otp"
           name="otp"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={handleChange}
           pattern="\d{6}"
           maxLength={6}
           placeholder="Enter 6-digit OTP"
           title="Please enter a valid 6-digit OTP"
           disabled={disabled}
           required
+          className="text-center tracking-widest text-lg"
         />
       </div>
     </div>

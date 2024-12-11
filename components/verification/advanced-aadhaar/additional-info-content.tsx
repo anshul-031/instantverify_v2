@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { AdditionalInfoForm } from "@/components/verification/additional-info-form";
 import { deepvueService } from "@/lib/services/deepvue";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
 import { VerificationDetails } from "@/lib/types/verification";
 import { ExtractedInfo } from "@/lib/types/deepvue";
+import { useVerificationStore } from "@/lib/store/verification";
 
 interface Props {
   verification: VerificationDetails;
@@ -23,6 +25,8 @@ export function AdditionalInfoContent({
 }: Props) {
   const [extractedInfo, setExtractedInfo] = useState<ExtractedInfo | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
+  const setVerification = useVerificationStore(state => state.setVerification);
 
   // Extract information from documents when component mounts
   useEffect(() => {
@@ -83,12 +87,29 @@ export function AdditionalInfoContent({
         throw new Error('Failed to update verification');
       }
 
+      const updatedVerification = await response.json();
+
+      // Update store with new verification status
+      setVerification(verification.id, {
+        ...updatedVerification,
+        status: 'verified',
+        metadata: {
+          ekycData,
+          faceMatchScore,
+          otpVerified: true
+        }
+      });
+
       toast({
-        title: "Verification Complete",
+        title: "Success",
         description: "Your verification has been processed successfully.",
       });
 
-      onComplete();
+      // Use setTimeout to ensure state updates are processed before navigation
+      setTimeout(() => {
+        router.push(`/verify/report/${verification.id}`);
+      }, 100);
+
     } catch (error) {
       toast({
         title: "Verification Failed",
