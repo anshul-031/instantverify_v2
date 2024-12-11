@@ -22,14 +22,30 @@ export function useVerificationGuard({
   );
 
   useEffect(() => {
-    if (!verification) {
-      router.push('/verify');
-      return;
-    }
+    const checkVerification = async () => {
+      if (!verification) {
+        try {
+          const response = await fetch(`/api/verify/${verificationId}`);
+          if (response.ok) {
+            const data = await response.json();
+            useVerificationStore.getState().setVerification(verificationId, data);
+            
+            if (data.status !== requiredStatus) {
+              router.push(redirectTo(verificationId));
+            }
+          } else {
+            router.push('/verify');
+          }
+        } catch (error) {
+          console.error('Failed to fetch verification:', error);
+          router.push('/verify');
+        }
+      } else if (verification.status !== requiredStatus) {
+        router.push(redirectTo(verificationId));
+      }
+    };
 
-    if (verification.status !== requiredStatus) {
-      router.push(redirectTo(verificationId));
-    }
+    checkVerification();
   }, [verification, requiredStatus, redirectTo, verificationId, router]);
 
   return verification;

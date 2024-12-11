@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdditionalInfoForm } from "@/components/verification/additional-info-form";
 import { deepvueService } from "@/lib/services/deepvue";
 import { useToast } from "@/components/ui/use-toast";
@@ -24,37 +24,75 @@ export function AdditionalInfoContent({
   const [extractedInfo, setExtractedInfo] = useState<ExtractedInfo | null>(null);
   const { toast } = useToast();
 
-  const handleSubmit = async (data: { otp: string }) => {
+  // Extract information from documents when component mounts
+  useEffect(() => {
+    const extractDocumentInfo = async () => {
+      if (verification.documents?.governmentId?.[0]) {
+        try {
+          const info = await deepvueService.extractAadhaarOcr(
+            verification.documents.governmentId[0].url
+          );
+          setExtractedInfo(info);
+        } catch (error) {
+          console.error('Failed to extract document info:', error);
+          toast({
+            title: "Error",
+            description: "Failed to extract document information",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    extractDocumentInfo();
+  }, [verification.documents?.governmentId, toast]);
+
+  const handleSubmit = async (data: { aadhaarNumber: string; otp: string }) => {
     setIsLoading(true);
     try {
-      if (!verification.aadhaarNumber) {
-        throw new Error('Aadhaar number not found');
-      }
-
       // Verify OTP and get eKYC data
       const ekycData = await deepvueService.getAadhaarEkyc(
-        verification.aadhaarNumber,
+        data.aadhaarNumber,
         data.otp
       );
 
-      // Safely access personPhoto
-      const personPhoto = verification.documents?.personPhoto?.[0];
-      if (!personPhoto) {
-        throw new Error('Person photo not found');
+      // Match faces if person photo exists
+      let faceMatchScore = 0;
+      if (verification.documents?.personPhoto?.[0]) {
+        faceMatchScore = await deepvueService.matchFaces(
+          verification.documents.personPhoto[0].url,
+          ekycData.photo
+        );
       }
 
-      // Match faces
-      const faceMatchScore = await deepvueService.matchFaces(
-        personPhoto.url,
-        ekycData.photo
-      );
+      // Update verification status
+      const response = await fetch(`/api/verify/${verification.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'verified',
+          metadata: {
+            ekycData,
+            faceMatchScore,
+            otpVerified: true
+          }
+        })
+      });
 
-      // Update verification and proceed
+      if (!response.ok) {
+        throw new Error('Failed to update verification');
+      }
+
+      toast({
+        title: "Verification Complete",
+        description: "Your verification has been processed successfully.",
+      });
+
       onComplete();
     } catch (error) {
       toast({
         title: "Verification Failed",
-        description: "Failed to complete verification. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to complete verification",
         variant: "destructive",
       });
     } finally {

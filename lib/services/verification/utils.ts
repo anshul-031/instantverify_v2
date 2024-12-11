@@ -1,5 +1,5 @@
 import { VerificationDocuments, VerificationDetails, VerificationStatus } from '@/lib/types/verification';
-import { Prisma, Verification } from '@prisma/client';
+import { Prisma, Verification, User } from '@prisma/client';
 
 export function convertVerificationDates(verification: any): any {
   return {
@@ -22,7 +22,9 @@ export function prepareDocumentsForPrisma(documents: VerificationDocuments): Pri
   return JSON.parse(JSON.stringify(documents)) as Prisma.JsonValue;
 }
 
-export function convertVerificationToDetails(verification: Verification): VerificationDetails {
+export function convertVerificationToDetails(
+  verification: Verification & { user?: User }
+): VerificationDetails {
   return {
     id: verification.id,
     type: verification.type,
@@ -38,6 +40,13 @@ export function convertVerificationToDetails(verification: Verification): Verifi
     aadhaarNumber: verification.aadhaarNumber || '',
     createdAt: verification.createdAt.toISOString(),
     updatedAt: verification.updatedAt.toISOString(),
-    userId: verification.userId
+    userId: verification.userId,
+    user: verification.user ? {
+      id: verification.user.id,
+      email: verification.user.email,
+      phone: verification.user.phone,
+      firstName: verification.user.firstName,
+      lastName: verification.user.lastName,
+    } : undefined
   };
 }

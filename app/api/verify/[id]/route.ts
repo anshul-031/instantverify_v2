@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { withLogging } from '@/lib/middleware/logging';
 import logger from '@/lib/utils/logger';
+import { convertVerificationToDetails } from '@/lib/services/verification/utils';
 
 interface Props {
   params: {
@@ -14,6 +15,9 @@ export async function GET(request: Request, { params }: Props) {
     try {
       const verification = await prisma.verification.findUnique({
         where: { id: params.id },
+        include: {
+          user: true
+        }
       });
 
       if (!verification) {
@@ -23,7 +27,9 @@ export async function GET(request: Request, { params }: Props) {
         );
       }
 
-      return NextResponse.json(verification);
+      // Convert Prisma model to VerificationDetails type
+      const details = convertVerificationToDetails(verification);
+      return NextResponse.json(details);
     } catch (error) {
       logger.error('Failed to fetch verification:', error);
       return NextResponse.json(
@@ -45,11 +51,16 @@ export async function PATCH(request: Request, { params }: Props) {
           ...data,
           updatedAt: new Date(),
         },
+        include: {
+          user: true
+        }
       });
 
       logger.info('Verification updated successfully', { id: params.id });
 
-      return NextResponse.json(verification);
+      // Convert and return updated verification
+      const details = convertVerificationToDetails(verification);
+      return NextResponse.json(details);
     } catch (error) {
       logger.error('Failed to update verification:', error);
       return NextResponse.json(
