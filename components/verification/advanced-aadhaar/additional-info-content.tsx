@@ -69,7 +69,7 @@ export function AdditionalInfoContent({
         );
       }
 
-      // Update verification status
+      // Update verification status with both OCR and eKYC data
       const response = await fetch(`/api/verify/${verification.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -77,6 +77,7 @@ export function AdditionalInfoContent({
           status: 'verified',
           metadata: {
             ekycData,
+            ocrData: extractedInfo, // Include OCR data in metadata
             faceMatchScore,
             otpVerified: true
           }
@@ -95,6 +96,7 @@ export function AdditionalInfoContent({
         status: 'verified',
         metadata: {
           ekycData,
+          ocrData: extractedInfo, // Include OCR data in store
           faceMatchScore,
           otpVerified: true
         }
