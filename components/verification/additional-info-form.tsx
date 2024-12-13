@@ -17,17 +17,19 @@ interface FormData {
 
 interface Props {
   method: VerificationMethod;
-  onSubmit: (data: FormData) => Promise<void>;
+  onSubmit: (data: { aadhaarNumber: string; otp: string }) => Promise<void>;
   isSubmitting: boolean;
   extractedInfo?: ExtractedInfo;
+  personPhotoUrl?: string; // Add this line
 }
+
 
 const initialFormState: FormData = {
   aadhaarNumber: "",
   otp: "",
 };
 
-export function AdditionalInfoForm({ method, onSubmit, isSubmitting, extractedInfo }: Props) {
+export function AdditionalInfoForm({ method, onSubmit, isSubmitting, extractedInfo, personPhotoUrl}: Props) {
   const [formData, setFormData] = useState<FormData>(initialFormState);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);

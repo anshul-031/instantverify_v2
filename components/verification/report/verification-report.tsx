@@ -85,6 +85,9 @@ export function VerificationReportView({ report }: Props) {
     }
   };
 
+ // Get the person photo URL from the verification documents
+ const personPhotoUrl = metadata?.personPhotoUrl || report.verificationDetails.documents?.personPhoto?.[0]?.url;  
+  
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-8 verification-report">
       <ReportHeader
@@ -101,6 +104,8 @@ export function VerificationReportView({ report }: Props) {
         <IDVerificationComparison 
           ocrData={ocrData}
           ekycData={ekycData}
+          faceMatchScore={metadata?.faceMatchScore}
+          personPhotoUrl={personPhotoUrl} // Pass the person photo URL
         />
         <BackgroundCheckSection result={report.backgroundCheck} />
       </div>

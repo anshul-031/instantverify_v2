@@ -68,7 +68,7 @@ export function AdditionalInfoContent({
           ekycData.photo
         );
       }
-
+      console.log("personPhotoUrl",verification.documents?.personPhoto?.[0]?.url);
       // Update verification status with both OCR and eKYC data
       const response = await fetch(`/api/verify/${verification.id}`, {
         method: 'PATCH',
@@ -77,9 +77,10 @@ export function AdditionalInfoContent({
           status: 'verified',
           metadata: {
             ekycData,
-            ocrData: extractedInfo, // Include OCR data in metadata
+            ocrData: extractedInfo,
             faceMatchScore,
-            otpVerified: true
+            otpVerified: true,
+            personPhotoUrl: verification.documents?.personPhoto?.[0]?.url // Include the person photo URL
           }
         })
       });
@@ -96,9 +97,10 @@ export function AdditionalInfoContent({
         status: 'verified',
         metadata: {
           ekycData,
-          ocrData: extractedInfo, // Include OCR data in store
+          ocrData: extractedInfo,
           faceMatchScore,
-          otpVerified: true
+          otpVerified: true,
+          personPhotoUrl: verification.documents?.personPhoto?.[0]?.url // Include the person photo URL
         }
       });
 
@@ -137,6 +139,7 @@ export function AdditionalInfoContent({
       onSubmit={handleSubmit}
       isSubmitting={isLoading}
       extractedInfo={extractedInfo}
+      personPhotoUrl={verification.documents?.personPhoto?.[0]?.url} // Pass the person photo URL
     />
   );
 }

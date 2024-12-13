@@ -24,6 +24,7 @@ interface FormData {
     aadhaarBack: File | null;
   };
   photo: File | null;
+  photoUrl?: string; // Add photoUrl to store the uploaded photo URL
 }
 
 export function AdvancedAadhaarForm({ onSubmit, isSubmitting }: Props) {
@@ -64,6 +65,9 @@ export function AdvancedAadhaarForm({ onSubmit, isSubmitting }: Props) {
 
       const { urls } = await uploadFiles(filesToUpload);
 
+      // Store the photo URL
+      const photoUrl = urls[2];
+
       // Prepare final data with URLs
       const finalData = {
         aadhaarNumber: formData.aadhaarNumber,
@@ -83,12 +87,13 @@ export function AdvancedAadhaarForm({ onSubmit, isSubmitting }: Props) {
             }
           ],
           personPhoto: [{
-            url: urls[2],
+            url: photoUrl,
             type: "photo",
             name: "Person Photo",
             size: photo.size
           }]
-        }
+        },
+        photoUrl // Pass the photo URL to the parent component
       };
 
       await onSubmit(finalData);

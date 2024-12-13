@@ -6,6 +6,8 @@ import Image from "next/image";
 interface Props {
   ocrData: ExtractedInfo;
   ekycData: ExtractedInfo;
+  faceMatchScore?: number;
+  personPhotoUrl?: string;
 }
 
 interface ComparisonField {
@@ -13,24 +15,31 @@ interface ComparisonField {
   key: keyof ExtractedInfo;
 }
 
-const fields: ComparisonField[] = [
-  { label: "Name", key: "name" },
-  { label: "Address", key: "address" },
-  { label: "Date of Birth", key: "dateOfBirth" },
-  { label: "Gender", key: "gender" },
-  { label: "Father's Name", key: "fatherName" },
-  { label: "District", key: "district" },
-  { label: "State", key: "state" },
-  { label: "City", key: "city" },
-  { label: "Pincode", key: "pincode" },
-  { label: "Country", key: "country" },
-];
+export function IDVerificationComparison({ 
+  ocrData, 
+  ekycData, 
+  faceMatchScore = 0,
+  personPhotoUrl
+}: Props) {
+  const fields: ComparisonField[] = [
+    { label: "Name", key: "name" },
+    { label: "Address", key: "address" },
+    { label: "Date of Birth", key: "dateOfBirth" },
+    { label: "Gender", key: "gender" },
+    { label: "Father's Name", key: "fatherName" },
+    { label: "District", key: "district" },
+    { label: "State", key: "state" },
+    { label: "City", key: "city" },
+    { label: "Pincode", key: "pincode" },
+    { label: "Country", key: "country" },
+  ];
 
-export function IDVerificationComparison({ ocrData, ekycData }: Props) {
   const getMatchStatus = (field: keyof ExtractedInfo) => {
     if (!ocrData[field] || !ekycData[field]) return false;
     return ocrData[field].toLowerCase() === ekycData[field].toLowerCase();
   };
+
+  console.log("personPhotoUrl in id-comparision.tsx",personPhotoUrl);
 
   return (
     <Card className="p-6 space-y-6">
@@ -82,32 +91,58 @@ export function IDVerificationComparison({ ocrData, ekycData }: Props) {
       {/* Photo Comparison Section */}
       <div className="border-t pt-6">
         <h3 className="font-medium mb-4">Photo Verification</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <p className="text-sm text-gray-600">ID Photo</p>
-            <div className="relative aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden">
-              {ekycData.photo && (
-                <Image
-                  src={`data:image/jpeg;base64,${ekycData.photo}`}
-                  alt="ID Photo"
-                  fill
-                  className="object-cover"
-                />
-              )}
-            </div>
-          </div>
+        <div className="grid grid-cols-2 gap-8">
           <div className="space-y-2">
             <p className="text-sm text-gray-600">Captured Photo</p>
             <div className="relative aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden">
-              {ocrData.photo && (
+              {personPhotoUrl ? (
                 <Image
-                  src={ocrData.photo}
+                  src={personPhotoUrl}
                   alt="Captured Photo"
                   fill
                   className="object-cover"
                 />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  No photo available
+                </div>
               )}
             </div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-sm text-gray-600">eKYC Photo</p>
+            <div className="relative aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden">
+              {ekycData.photo ? (
+                <Image
+                  src={`data:image/jpeg;base64,${ekycData.photo}`}
+                  alt="eKYC Photo"
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  No photo available
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-col items-center justify-center space-y-2">
+          <div className="flex items-center">
+            {faceMatchScore >= 80 ? (
+              <>
+                <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                <span className="text-green-500 font-medium">Photos match</span>
+              </>
+            ) : (
+              <>
+                <XCircle className="h-5 w-5 text-red-500 mr-2" />
+                <span className="text-red-500 font-medium">Photos do not match</span>
+              </>
+            )}
+          </div>
+          <div className="text-sm text-gray-600">
+            Face Match Score: {faceMatchScore}%
           </div>
         </div>
       </div>
