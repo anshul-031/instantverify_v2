@@ -39,12 +39,42 @@ export function IDVerificationComparison({
     return ocrData[field].toLowerCase() === ekycData[field].toLowerCase();
   };
 
-  console.log("personPhotoUrl in id-comparision.tsx",personPhotoUrl);
+  // Calculate overall match percentage
+  const matchedFields = fields.filter(field => getMatchStatus(field.key)).length;
+  const totalFields = fields.length;
+  const matchPercentage = Math.round((matchedFields / totalFields) * 100);
+
+  // Overall verification status
+  const isVerified = matchPercentage >= 80 && (faceMatchScore >= 80);
 
   return (
     <Card className="p-6 space-y-6">
-      <h2 className="text-xl font-semibold">ID Verification Result</h2>
-      
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">ID Verification Result</h2>
+        <div className="flex items-center space-x-4">
+          <div className={`flex items-center px-4 py-2 rounded-full ${
+            isVerified ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+          }`}>
+            {isVerified ? (
+              <CheckCircle className="h-5 w-5 mr-2" />
+            ) : (
+              <XCircle className="h-5 w-5 mr-2" />
+            )}
+            <span className="font-semibold">
+              {isVerified ? 'Verified' : 'Not Verified'}
+            </span>
+          </div>
+          <div className="text-sm">
+            <span className="font-medium">Overall Match:</span>
+            <span className={`ml-2 font-bold ${
+              matchPercentage >= 80 ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {matchPercentage}%
+            </span>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* User Provided Details Column */}
         <div className="space-y-4">
@@ -71,20 +101,26 @@ export function IDVerificationComparison({
         {/* Verification Results Column */}
         <div className="space-y-4">
           <h3 className="font-medium text-gray-500">Verification Result</h3>
-          {fields.map(field => (
-            <div key={`match-${field.key}`} className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
-              <p className="text-sm text-gray-600">{field.label}</p>
-              {getMatchStatus(field.key) ? (
-                <div className="flex items-center text-green-500">
-                  <CheckCircle className="h-5 w-5" />
+          {fields.map(field => {
+            const isMatched = getMatchStatus(field.key);
+            return (
+              <div key={`match-${field.key}`} className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">{field.label}</p>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    isMatched ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                  }`}>
+                    {isMatched ? 'Matched' : 'Not Matched'}
+                  </span>
                 </div>
-              ) : (
-                <div className="flex items-center text-red-500">
-                  <XCircle className="h-5 w-5" />
-                </div>
-              )}
-            </div>
-          ))}
+                {isMatched ? (
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                ) : (
+                  <XCircle className="h-5 w-5 text-red-500" />
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 

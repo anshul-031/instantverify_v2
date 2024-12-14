@@ -68,7 +68,7 @@ export function AdditionalInfoContent({
           ekycData.photo
         );
       }
-      console.log("personPhotoUrl",verification.documents?.personPhoto?.[0]?.url);
+
       // Update verification status with both OCR and eKYC data
       const response = await fetch(`/api/verify/${verification.id}`, {
         method: 'PATCH',
