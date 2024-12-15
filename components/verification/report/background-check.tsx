@@ -1,5 +1,3 @@
-"use client";
-
 import { Card } from "@/components/ui/card";
 import { BackgroundCheckResult } from "@/lib/types/report";
 import { AlertCircle, FileText, Search } from "lucide-react";
@@ -9,6 +7,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface Props {
   result: BackgroundCheckResult;
@@ -52,36 +58,31 @@ export function BackgroundCheckSection({ result }: Props) {
           </AccordionTrigger>
           <AccordionContent>
             {courtRecords.length > 0 ? (
-              <div className="space-y-4">
-                {courtRecords.map((record, index) => (
-                  <div key={index} className="border-b pb-4 last:border-0">
-                    <dl className="grid grid-cols-2 gap-2">
-                      <div>
-                        <dt className="text-sm text-gray-600">Court</dt>
-                        <dd className="font-medium">{record.court}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm text-gray-600">Type</dt>
-                        <dd className="font-medium">{record.type}</dd>
-                      </div>
-                      {record.caseNumber && (
-                        <div>
-                          <dt className="text-sm text-gray-600">Case Number</dt>
-                          <dd className="font-medium">{record.caseNumber}</dd>
-                        </div>
-                      )}
-                      {record.status && (
-                        <div>
-                          <dt className="text-sm text-gray-600">Status</dt>
-                          <dd className="font-medium">{record.status}</dd>
-                        </div>
-                      )}
-                    </dl>
-                    {record.description && (
-                      <p className="mt-2 text-sm text-gray-600">{record.description}</p>
-                    )}
-                  </div>
-                ))}
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Court</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Case Number</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Description</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {courtRecords.map((record, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{record.court}</TableCell>
+                        <TableCell>{record.type}</TableCell>
+                        <TableCell>{record.caseNumber || 'N/A'}</TableCell>
+                        <TableCell>{record.status || 'N/A'}</TableCell>
+                        <TableCell className="max-w-md truncate">
+                          {record.description || 'N/A'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             ) : (
               <p className="text-sm text-gray-600">No court records found</p>
@@ -103,36 +104,33 @@ export function BackgroundCheckSection({ result }: Props) {
           </AccordionTrigger>
           <AccordionContent>
             {defaulterRecords.length > 0 ? (
-              <div className="space-y-4">
-                {defaulterRecords.map((record, index) => (
-                  <div key={index} className="border-b pb-4 last:border-0">
-                    <dl className="grid grid-cols-2 gap-2">
-                      <div>
-                        <dt className="text-sm text-gray-600">Source</dt>
-                        <dd className="font-medium">{record.source}</dd>
-                      </div>
-                      {record.amount && (
-                        <div>
-                          <dt className="text-sm text-gray-600">Amount</dt>
-                          <dd className="font-medium">₹{record.amount.toLocaleString()}</dd>
-                        </div>
-                      )}
-                      {record.date && (
-                        <div>
-                          <dt className="text-sm text-gray-600">Date</dt>
-                          <dd className="font-medium">{record.date}</dd>
-                        </div>
-                      )}
-                      <div>
-                        <dt className="text-sm text-gray-600">Status</dt>
-                        <dd className="font-medium">{record.status}</dd>
-                      </div>
-                    </dl>
-                    {record.description && (
-                      <p className="mt-2 text-sm text-gray-600">{record.description}</p>
-                    )}
-                  </div>
-                ))}
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Source</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Description</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {defaulterRecords.map((record, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{record.source}</TableCell>
+                        <TableCell>
+                          {record.amount ? `₹${record.amount.toLocaleString()}` : 'N/A'}
+                        </TableCell>
+                        <TableCell>{record.date || 'N/A'}</TableCell>
+                        <TableCell>{record.status}</TableCell>
+                        <TableCell className="max-w-md truncate">
+                          {record.description || 'N/A'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             ) : (
               <p className="text-sm text-gray-600">No defaulter records found</p>
@@ -154,32 +152,31 @@ export function BackgroundCheckSection({ result }: Props) {
           </AccordionTrigger>
           <AccordionContent>
             {firRecords.length > 0 ? (
-              <div className="space-y-4">
-                {firRecords.map((record, index) => (
-                  <div key={index} className="border-b pb-4 last:border-0">
-                    <dl className="grid grid-cols-2 gap-2">
-                      <div>
-                        <dt className="text-sm text-gray-600">Station</dt>
-                        <dd className="font-medium">{record.stationName}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm text-gray-600">FIR Number</dt>
-                        <dd className="font-medium">{record.firNumber}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm text-gray-600">Date</dt>
-                        <dd className="font-medium">{record.date}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm text-gray-600">Status</dt>
-                        <dd className="font-medium">{record.status}</dd>
-                      </div>
-                    </dl>
-                    {record.description && (
-                      <p className="mt-2 text-sm text-gray-600">{record.description}</p>
-                    )}
-                  </div>
-                ))}
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Station</TableHead>
+                      <TableHead>FIR Number</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Description</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {firRecords.map((record, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{record.stationName}</TableCell>
+                        <TableCell>{record.firNumber}</TableCell>
+                        <TableCell>{record.date}</TableCell>
+                        <TableCell>{record.status}</TableCell>
+                        <TableCell className="max-w-md truncate">
+                          {record.description || 'N/A'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             ) : (
               <p className="text-sm text-gray-600">No FIR records found</p>
