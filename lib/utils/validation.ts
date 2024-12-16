@@ -40,7 +40,7 @@ export function validateAadhaar(aadhaar: string): string | null {
   }
 
   if (c !== 0) {
-    return "Invalid Aadhaar number";
+    return "Invalid Aadhaar number, Either the Aadhaar ID is fake or a typing mistake";
   }
 
   return null;
