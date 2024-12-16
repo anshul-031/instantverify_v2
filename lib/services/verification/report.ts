@@ -57,32 +57,34 @@ export async function generateVerificationReport(verification: VerificationDetai
 }
 
 function generateMockCourtRecords() {
-  const courts = [
-    'Delhi High Court',
-    'Mumbai High Court',
-    'Bangalore Civil Court',
-    'Chennai Metropolitan Court'
+  return [
+    // General Courts
+    { court: "All High Courts", status: "No Case found", year: "2000" },
+    { court: "Civil Courts - Junior Civil Court, Senior Civil Court, District Court", status: "No Case found", year: "2000" },
+    { court: "Criminal Courts - Magistrate courts and Session courts",  status: "No Case found", year: "2000" },
+    { court: "Supreme Court",  status: "No Case found", year: "1947" },
+    
+    // Tribunals
+    { court: "Consumer Courts",  status: "No Case found", year: "2000" },
+    { court: "CEGAT/CESTAT",  status: "No Case found", year: "2000" },
+    { court: "Debt Recovery Tribunal(DRT)",  status: "No Case found", year: "2000" },
+    { court: "Debt Recovery Appellate Tribunal(DRAT)",  status: "No Case found", year: "2000" },
+    { court: "Income Tax Appellate Tribunal (ITAT)",  status: "No Case found", year: "2000" },
+    { court: "National Company Law Tribunal(NCLT)",  status: "No Case found", year: "2000" },
+    { court: "Securities Apellate Tribunal(SAT)",  status: "No Case found", year: "2000" },
+    { court: "National Green Tribunal(NGT)", status: "No Case found", year: "2000" },
+    { court: "NCLAT", status: "No Case found", year: "2000" },
+    { court: "Appellate Tribunal for Foreign Exchange - APTE", status: "No Case found", year: "2000" },
+    { court: "Others", status: "No Case found", year: "2000" },
+    
+    // Defaulter Lists
+    { court: "CIBIL Willful defaulter List amounting to above Rs. 25 Lakhs",  status: "No Case found", year: "2012" },
+    { court: "Crif Defaulter List",  status: "No Case found", year: "2012" },
+    { court: "EPF Defaulter List", status: "No Case found", year: "2012" },
+    { court: "Equifax Defaulter List",  status: "No Case found", year: "2012" },
+    { court: "MCA Defaulter List", status: "No Case found", year: "2016" },
+    
+    // Others
+    { court: "First Information Report(FIR)", status: "No Case found", year: "2011" }
   ];
-
-  const types = [
-    'Civil Case',
-    'Criminal Case',
-    'Property Dispute',
-    'Family Matter'
-  ];
-
-  const statuses = [
-    'Pending',
-    'Disposed',
-    'Under Trial',
-    'Closed'
-  ];
-
-  return Array.from({ length: 25 }, (_, i) => ({
-    court: courts[Math.floor(Math.random() * courts.length)],
-    type: types[Math.floor(Math.random() * types.length)],
-    caseNumber: `CASE/${2024-Math.floor(Math.random() * 5)}/${1000 + i}`,
-    status: statuses[Math.floor(Math.random() * statuses.length)],
-    description: 'Mock court record for demonstration purposes'
-  }));
 }

@@ -30,11 +30,8 @@ export interface LocationInfo {
 
 export interface CourtRecord {
   court: string;
-  type: string;
-  caseNumber?: string;
   year?: string;
   status?: string;
-  description?: string;
 }
 
 export interface DefaulterRecord {

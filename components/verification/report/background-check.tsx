@@ -63,22 +63,16 @@ export function BackgroundCheckSection({ result }: Props) {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Court</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Case Number</TableHead>
+                      <TableHead>Case Since</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Description</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {courtRecords.map((record, index) => (
                       <TableRow key={index}>
                         <TableCell>{record.court}</TableCell>
-                        <TableCell>{record.type}</TableCell>
-                        <TableCell>{record.caseNumber || 'N/A'}</TableCell>
+                        <TableCell>{record.year}</TableCell>
                         <TableCell>{record.status || 'N/A'}</TableCell>
-                        <TableCell className="max-w-md truncate">
-                          {record.description || 'N/A'}
-                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
