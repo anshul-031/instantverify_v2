@@ -9,6 +9,7 @@ export function getMockAadhaarEkycResponse(): AadhaarVerifyResponse {
   let ekycData;
   if(process.env.NEXT_PUBLIC_AADHAAR_EKYC_API_RESPONSE){
     ekycData = JSON.parse(process.env.NEXT_PUBLIC_AADHAAR_EKYC_API_RESPONSE);
+    console.log("Using mock Aadhaar EKYC API Response");
   }else{
     // TODO: Call Deepvue Aadhaar Ekyc API to fetch EKYC Data 
   }

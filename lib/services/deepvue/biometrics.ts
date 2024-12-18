@@ -16,6 +16,7 @@ export async function matchFaces(
     let mockResponse;
     if(process.env.NEXT_PUBLIC_FACE_MATCH_API_RESPONSE){
       mockResponse = JSON.parse(process.env.NEXT_PUBLIC_FACE_MATCH_API_RESPONSE);
+      console.log("Using mock Fatch Match API Response");
     }else{
       // TODO: Call Deepvue match Face API to fetch EKYC Data 
     }
