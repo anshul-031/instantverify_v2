@@ -6,7 +6,12 @@ export function getMockAadhaarOtpResponse(): AadhaarOtpResponse {
 }
 
 export function getMockAadhaarEkycResponse(): AadhaarVerifyResponse {
-  const ekycData = require('@/responses/aadhaarEkycApiResponse.json');
+  let ekycData;
+  if(process.env.NEXT_PUBLIC_AADHAAR_EKYC_API_RESPONSE){
+    ekycData = JSON.parse(process.env.NEXT_PUBLIC_AADHAAR_EKYC_API_RESPONSE);
+  }else{
+    // TODO: Call Deepvue Aadhaar Ekyc API to fetch EKYC Data 
+  }
   return {
     success: true,
     isVerified: true,
