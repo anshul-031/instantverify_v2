@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import { VerificationDetails } from "@/lib/types/verification";
 import { ExtractedInfo } from "@/lib/types/deepvue";
 import { useVerificationStore } from "@/lib/store/verification";
+import { storageService } from '@/lib/services/storage';
 
 interface Props {
   verification: VerificationDetails;
@@ -33,9 +34,9 @@ export function AdditionalInfoContent({
     const extractDocumentInfo = async () => {
       if (verification.documents?.governmentId?.[0]) {
         try {
-          const info = await deepvueService.extractAadhaarOcr(
-            verification.documents.governmentId[0].url
-          );
+          // Get signed URL for the document
+          const signedUrl = await storageService.getSignedUrl(verification.documents.governmentId[0].url);
+          const info = await deepvueService.extractAadhaarOcr(signedUrl);
           setExtractedInfo(info);
         } catch (error) {
           console.error('Failed to extract document info:', error);
@@ -63,8 +64,10 @@ export function AdditionalInfoContent({
       // Match faces if person photo exists
       let faceMatchScore = 0;
       if (verification.documents?.personPhoto?.[0]) {
+        // Get signed URLs for both photos
+        const personPhotoUrl = await storageService.getSignedUrl(verification.documents.personPhoto[0].url);
         faceMatchScore = await deepvueService.matchFaces(
-          verification.documents.personPhoto[0].url,
+          personPhotoUrl,
           ekycData.photo
         );
       }
@@ -80,7 +83,7 @@ export function AdditionalInfoContent({
             ocrData: extractedInfo,
             faceMatchScore,
             otpVerified: true,
-            personPhotoUrl: verification.documents?.personPhoto?.[0]?.url // Include the person photo URL
+            personPhotoUrl: verification.documents?.personPhoto?.[0]?.url
           }
         })
       });
@@ -100,7 +103,7 @@ export function AdditionalInfoContent({
           ocrData: extractedInfo,
           faceMatchScore,
           otpVerified: true,
-          personPhotoUrl: verification.documents?.personPhoto?.[0]?.url // Include the person photo URL
+          personPhotoUrl: verification.documents?.personPhoto?.[0]?.url
         }
       });
 
@@ -139,7 +142,7 @@ export function AdditionalInfoContent({
       onSubmit={handleSubmit}
       isSubmitting={isLoading}
       extractedInfo={extractedInfo}
-      personPhotoUrl={verification.documents?.personPhoto?.[0]?.url} // Pass the person photo URL
+      personPhotoUrl={verification.documents?.personPhoto?.[0]?.url}
     />
   );
 }

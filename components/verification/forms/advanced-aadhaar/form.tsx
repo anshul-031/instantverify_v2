@@ -10,7 +10,8 @@ import { AadhaarInput } from "./aadhaar-input";
 import { DocumentUpload } from "./document-upload";
 import { PhotoCapture } from "./photo-capture";
 import { useToast } from "@/components/ui/use-toast";
-import { uploadFiles } from "@/lib/utils/upload";
+import { uploadDocuments } from "@/lib/services/verification/upload";
+import logger from "@/lib/utils/logger";
 
 interface Props {
   onSubmit: (data: any) => Promise<void>;
@@ -24,7 +25,6 @@ interface FormData {
     aadhaarBack: File | null;
   };
   photo: File | null;
-  photoUrl?: string; // Add photoUrl to store the uploaded photo URL
 }
 
 export function AdvancedAadhaarForm({ onSubmit, isSubmitting }: Props) {
@@ -46,27 +46,49 @@ export function AdvancedAadhaarForm({ onSubmit, isSubmitting }: Props) {
     setStep(2);
   };
 
-  const handleDocumentsSubmit = (documents: { aadhaarFront: File; aadhaarBack: File }) => {
-    setFormData(prev => ({
-      ...prev,
-      documents
-    }));
-    setStep(3);
+  const handleDocumentsSubmit = async (documents: { aadhaarFront: File; aadhaarBack: File }) => {
+    try {
+      logger.debug('Uploading Aadhaar documents');
+      
+      // Upload documents using the verification upload service
+      const filesToUpload = [documents.aadhaarFront, documents.aadhaarBack];
+      const { urls } = await uploadDocuments({
+        files: filesToUpload,
+        type: 'governmentId'
+      });
+
+      logger.info('Documents uploaded successfully', { urls });
+
+      setFormData(prev => ({
+        ...prev,
+        documents
+      }));
+      setStep(3);
+    } catch (error) {
+      logger.error('Failed to upload documents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload documents. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePhotoSubmit = async (photo: File) => {
     try {
-      // Upload all files first
-      const filesToUpload = [
-        formData.documents.aadhaarFront,
-        formData.documents.aadhaarBack,
-        photo
-      ].filter((file): file is File => file !== null);
+      logger.debug('Uploading person photo');
 
-      const { urls } = await uploadFiles(filesToUpload);
+      // Upload photo using the verification upload service
+      const { urls: photoUrls } = await uploadDocuments({
+        files: [photo],
+        type: 'personPhoto'
+      });
 
-      // Store the photo URL
-      const photoUrl = urls[2];
+      // Get document URLs from previous uploads
+      const { urls: docUrls } = await uploadDocuments({
+        files: [formData.documents.aadhaarFront!, formData.documents.aadhaarBack!],
+        type: 'governmentId'
+      });
 
       // Prepare final data with URLs
       const finalData = {
@@ -74,33 +96,33 @@ export function AdvancedAadhaarForm({ onSubmit, isSubmitting }: Props) {
         documents: {
           governmentId: [
             {
-              url: urls[0],
+              url: docUrls[0],
               type: "document",
               name: "Aadhaar Front",
               size: formData.documents.aadhaarFront?.size || 0
             },
             {
-              url: urls[1],
-              type: "document",
+              url: docUrls[1],
+              type: "document", 
               name: "Aadhaar Back",
               size: formData.documents.aadhaarBack?.size || 0
             }
           ],
           personPhoto: [{
-            url: photoUrl,
+            url: photoUrls[0],
             type: "photo",
             name: "Person Photo",
             size: photo.size
           }]
-        },
-        photoUrl // Pass the photo URL to the parent component
+        }
       };
 
       await onSubmit(finalData);
     } catch (error) {
+      logger.error('Failed to upload photo:', error);
       toast({
         title: "Error",
-        description: "Failed to upload files. Please try again.",
+        description: "Failed to upload photo. Please try again.",
         variant: "destructive",
       });
     }

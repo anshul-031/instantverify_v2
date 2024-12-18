@@ -6,6 +6,11 @@ import { UploadParams, UploadResult } from './types/upload';
 
 export async function uploadDocuments({ files, type = 'governmentId' }: UploadParams): Promise<UploadResult> {
   try {
+    logger.debug('Starting document upload', { 
+      fileCount: files.length,
+      type 
+    });
+
     // Get test user ID (in production, this would come from auth context)
     const userResponse = await fetch('/api/auth/user');
     if (!userResponse.ok) {
@@ -15,8 +20,9 @@ export async function uploadDocuments({ files, type = 'governmentId' }: UploadPa
 
     // Generate storage path based on document type and user ID
     const storagePath = generateStoragePath(type, user.id);
+    logger.debug('Generated storage path', { storagePath });
 
-    // Upload all files to S3
+    // Upload all files using the storage service
     const uploadPromises = files.map(file => 
       storageService.uploadFile(file, storagePath)
     );
@@ -35,15 +41,4 @@ export async function uploadDocuments({ files, type = 'governmentId' }: UploadPa
     logger.error('Document upload error:', error);
     throw error;
   }
-}
-
-export function mapUrlsToDocuments(urls: string[], type: 'governmentId' | 'personPhoto'): VerificationDocuments {
-  return {
-    [type]: urls.map(url => ({
-      url,
-      type: "document",
-      name: type === 'governmentId' ? 'Government ID' : 'Person Photo',
-      size: 0
-    }))
-  };
 }

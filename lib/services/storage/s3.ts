@@ -11,13 +11,22 @@ import { generateUniqueFilename } from './utils';
 import logger from '@/lib/utils/logger';
 
 export class S3StorageService implements StorageService {
-  constructor(
-    private s3Client: S3Client,
-    private config: S3Config
-  ) {}
+  private s3Client: S3Client;
+
+  constructor(private config: S3Config) {
+    this.s3Client = new S3Client({
+      region: config.region,
+      credentials: {
+        accessKeyId: config.credentials.accessKeyId,
+        secretAccessKey: config.credentials.secretAccessKey,
+      }
+    });
+  }
 
   async uploadFile(file: File, path: string): Promise<UploadResult> {
     try {
+      logger.debug('Starting S3 upload', { path, fileName: file.name });
+
       const filename = generateUniqueFilename(file.name);
       const key = `${path}/${filename}`;
 
@@ -38,11 +47,16 @@ export class S3StorageService implements StorageService {
 
       await this.s3Client.send(command);
 
+      // Generate URL based on CloudFront or direct S3
       const url = this.config.cloudfrontUrl
         ? `${this.config.cloudfrontUrl}/${key}`
         : `https://${this.config.bucket}.s3.${this.config.region}.amazonaws.com/${key}`;
 
-      logger.info('File uploaded successfully to S3', { key });
+      logger.info('File uploaded successfully to S3', { 
+        key,
+        size: file.size,
+        type: file.type 
+      });
 
       return {
         url,
@@ -63,6 +77,8 @@ export class S3StorageService implements StorageService {
 
   async deleteFile(key: string): Promise<void> {
     try {
+      logger.debug('Deleting file from S3', { key });
+
       const command = new DeleteObjectCommand({
         Bucket: this.config.bucket,
         Key: key,
@@ -82,6 +98,8 @@ export class S3StorageService implements StorageService {
 
   async getSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
     try {
+      logger.debug('Generating signed URL for S3 object', { key, expiresIn });
+
       const command = new GetObjectCommand({
         Bucket: this.config.bucket,
         Key: key,
