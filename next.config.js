@@ -5,7 +5,8 @@ const nextConfig = {
     domains: [
       'images.unsplash.com',
       'localhost',
-      'res.cloudinary.com'
+      'res.cloudinary.com',
+      'instant-verify-1.s3.ap-south-1.amazonaws.com'
     ],
     remotePatterns: [
       {
@@ -17,6 +18,11 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: '**.cloudinary.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.amazonaws.com',
         pathname: '/**',
       }
     ]
