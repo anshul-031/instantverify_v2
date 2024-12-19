@@ -12,8 +12,6 @@ export const s3ConfigSchema = z.object({
 
 export type S3Config = z.infer<typeof s3ConfigSchema>;
 
-console.log("process.env.AWS_ACCESS_KEY_ID", process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID);
-console.log("process.env.AWS_SECRET_ACCESS_KEY", process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY);
 export const s3Config: S3Config = {
   region: process.env.AWS_REGION || 'ap-south-1',
   credentials: {
