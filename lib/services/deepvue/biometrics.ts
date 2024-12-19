@@ -13,8 +13,14 @@ export async function matchFaces(
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Load and return mock response
-    const mockResponse = require('@/responses/faceMatchAPIResponse.json');
+    let mockResponse;
+    if(process.env.NEXT_PUBLIC_FACE_MATCH_API_RESPONSE){
+      mockResponse = JSON.parse(process.env.NEXT_PUBLIC_FACE_MATCH_API_RESPONSE);
+      console.log("Using mock Fatch Match API Response");
+    }else{
+      // TODO: Call Deepvue match Face API to fetch EKYC Data 
+    }
+
     return mockResponse.data.confidence;
   }
 

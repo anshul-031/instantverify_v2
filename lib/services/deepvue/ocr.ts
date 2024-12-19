@@ -8,7 +8,14 @@ export async function extractAadhaarOcr(documentUrl: string): Promise<ExtractedI
   try {
     // In production, this would make an actual API call
     // For development, we'll use the mock response
-    const mockResponse: AadhaarOCRResponse = require('@/responses/aadhaarOCRAPI.json');
+
+    let mockResponse;
+    if(process.env.NEXT_PUBLIC_AADHAAR_OCR_API_RESPONSE){
+      mockResponse = JSON.parse(process.env.NEXT_PUBLIC_AADHAAR_OCR_API_RESPONSE);
+      console.log("Using mock Aadhaar OCR API Response");
+    }else{
+      // TODO: Call Deepvue AADHAAR OCR  API to fetch EKYC Data 
+    }
     
     // Transform the mock response to match our ExtractedInfo interface
     const extractedInfo: ExtractedInfo = {
