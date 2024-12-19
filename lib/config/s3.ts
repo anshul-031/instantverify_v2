@@ -15,11 +15,11 @@ export type S3Config = z.infer<typeof s3ConfigSchema>;
 export const s3Config: S3Config = {
   region: process.env.AWS_REGION || 'ap-south-1',
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+    accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY || '',
   },
-  bucket: process.env.AWS_BUCKET_NAME || '',
-  cloudfrontUrl: process.env.AWS_CLOUDFRONT_URL,
+  bucket: process.env.NEXT_PUBLIC_AWS_BUCKET_NAME || '',
+  cloudfrontUrl: process.env.NEXT_PUBLIC_AWS_CLOUDFRONT_URL,
 };
 
 export function validateS3Config(): { isValid: boolean; errors?: string[] } {
