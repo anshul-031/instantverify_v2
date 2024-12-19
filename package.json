@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "npm run build && next dev",
-    "build": "next build && npx prisma db push",
+    "local": "next dev",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate"
