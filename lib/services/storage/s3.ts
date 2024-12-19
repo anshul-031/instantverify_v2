@@ -48,9 +48,7 @@ export class S3StorageService implements StorageService {
       await this.s3Client.send(command);
 
       // Generate URL based on CloudFront or direct S3
-      const url = this.config.cloudfrontUrl
-        ? `${this.config.cloudfrontUrl}/${key}`
-        : `https://${this.config.bucket}.s3.${this.config.region}.amazonaws.com/${key}`;
+      const url = key;
 
       logger.info('File uploaded successfully to S3', { 
         key,
