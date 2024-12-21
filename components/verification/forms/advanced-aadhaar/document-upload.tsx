@@ -1,3 +1,4 @@
+// components/verification/forms/advanced-aadhaar/document-upload.tsx
 "use client";
 
 import { useState } from "react";
@@ -7,9 +8,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { AlertTriangle, Camera, Upload, X } from "lucide-react";
 import { CameraCapture } from "@/components/verification/camera/camera-capture";
+import { extractAadhaarOcr } from "@/lib/services/deepvue/api";
+import { useToast } from "@/components/ui/use-toast";
 
-interface Props {
-  onSubmit: (documents: { aadhaarFront: File; aadhaarBack: File }) => void;
+interface DocumentUploadProps {
+  onSubmit: (data: { 
+    aadhaarFront: File; 
+    aadhaarBack: File;
+    extractedInfo?: any; 
+  }) => void;
   initialDocuments?: {
     aadhaarFront: File | null;
     aadhaarBack: File | null;
@@ -21,12 +28,13 @@ export function DocumentUpload({
   onSubmit,
   initialDocuments,
   isSubmitting = false,
-}: Props) {
+}: DocumentUploadProps) {
   const [documents, setDocuments] = useState({
     aadhaarFront: initialDocuments?.aadhaarFront || null,
     aadhaarBack: initialDocuments?.aadhaarBack || null,
   });
   const [activeCamera, setActiveCamera] = useState<"front" | "back" | null>(null);
+  const { toast } = useToast();
 
   const handleFileChange = (side: "front" | "back") => (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -54,12 +62,48 @@ export function DocumentUpload({
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (documents.aadhaarFront && documents.aadhaarBack) {
-      onSubmit(documents as { aadhaarFront: File; aadhaarBack: File });
+    if (!documents.aadhaarFront || !documents.aadhaarBack) return;
+
+    try {
+      // Convert images to base64
+      const document1 = await fileToBase64(documents.aadhaarFront);
+      const document2 = await fileToBase64(documents.aadhaarBack);
+
+      // Call OCR API
+      const extractedInfo = await extractAadhaarOcr(document1, document2);
+
+      // Submit data with extracted info
+      onSubmit({
+        aadhaarFront: documents.aadhaarFront,
+        aadhaarBack: documents.aadhaarBack,
+        extractedInfo
+      });
+
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to process Aadhaar card",
+        variant: "destructive",
+      });
     }
   };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64String = reader.result as string;
+        resolve(base64String.split(',')[1]);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  // Rest of the component remains the same...
+  // (Keep the existing JSX and UI code)
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

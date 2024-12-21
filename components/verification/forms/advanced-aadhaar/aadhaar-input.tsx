@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { validateAadhaar } from "@/lib/utils/validation";
+import logger from "@/lib/utils/logger";
 
 interface Props {
   onSubmit: (aadhaarNumber: string) => void;
@@ -25,6 +26,7 @@ export function AadhaarInput({ onSubmit, initialValue = "", isSubmitting = false
       return;
     }
 
+    logger.debug('Submitting Aadhaar number');
     onSubmit(aadhaarNumber);
   };
 

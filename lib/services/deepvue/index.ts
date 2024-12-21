@@ -1,16 +1,16 @@
 export * from './aadhaar';
-export * from './ocr';
+export * from './api';
 export * from './biometrics';
 export * from './mock';
 
 import * as aadhaar from './aadhaar';
-import * as ocr from './ocr';
+import * as api from './api';
 import * as biometrics from './biometrics';
 import * as mock from './mock';
 
 export const deepvueService = {
   ...aadhaar,
-  ...ocr,
+  ...api,
   ...biometrics,
   ...mock,
 };

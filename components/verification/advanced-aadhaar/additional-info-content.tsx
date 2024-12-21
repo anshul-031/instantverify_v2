@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AdditionalInfoForm } from "@/components/verification/additional-info-form";
-import { deepvueService } from "@/lib/services/deepvue";
+import { deepvueService } from '@/lib/services/deepvue';
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
 import { VerificationDetails } from "@/lib/types/verification";
@@ -32,11 +32,23 @@ export function AdditionalInfoContent({
   // Extract information from documents when component mounts
   useEffect(() => {
     const extractDocumentInfo = async () => {
-      if (verification.documents?.governmentId?.[0]) {
+      const governmentId = verification.documents?.governmentId;
+      
+      // Check if we have both front and back documents
+      if (governmentId && Array.isArray(governmentId) && governmentId.length >= 2) {
         try {
-          // Get signed URL for the document
-          const signedUrl = await storageService.getSignedUrl(verification.documents.governmentId[0].url);
-          const info = await deepvueService.extractAadhaarOcr(signedUrl);
+          const frontDoc = governmentId[0];
+          const backDoc = governmentId[1];
+
+          if (!frontDoc?.url || !backDoc?.url) {
+            throw new Error('Missing document URLs');
+          }
+
+          // Get signed URLs for both front and back documents
+          const frontSignedUrl = await storageService.getSignedUrl(frontDoc.url);
+          const backSignedUrl = await storageService.getSignedUrl(backDoc.url);
+          
+          const info = await deepvueService.extractAadhaarOcr(frontSignedUrl, backSignedUrl);
           setExtractedInfo(info);
         } catch (error) {
           console.error('Failed to extract document info:', error);
@@ -63,9 +75,9 @@ export function AdditionalInfoContent({
 
       // Match faces if person photo exists
       let faceMatchScore = 0;
-      if (verification.documents?.personPhoto?.[0]) {
-        // Get signed URLs for both photos
-        const personPhotoUrl = await storageService.getSignedUrl(verification.documents.personPhoto[0].url);
+      const personPhoto = verification.documents?.personPhoto?.[0];
+      if (personPhoto?.url) {
+        const personPhotoUrl = await storageService.getSignedUrl(personPhoto.url);
         faceMatchScore = await deepvueService.matchFaces(
           personPhotoUrl,
           ekycData.photo

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { VerificationReport } from "@/lib/types/report";
 import { LocationInfoSection } from "./location-info";
 import { BackgroundCheckSection } from "./background-check";
@@ -46,6 +46,7 @@ export function VerificationReportView({ report }: Props) {
     city: metadata?.ekycData?.city || "N/A",
     pincode: metadata?.ekycData?.pincode || "N/A",
     country: metadata?.ekycData?.country || "India",
+    idNumber: metadata?.ekycData?.idNumber || metadata?.ekycData?.maskedNumber || "N/A",
     photo: metadata?.ekycData?.photo || "",
   };
 

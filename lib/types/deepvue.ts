@@ -1,19 +1,34 @@
-export interface AadhaarOCRResponse {
-  code: number;
+// Add new types for auth and session responses
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
+export interface SessionResponse {
+  session_id: string;
+  status: string;
   message: string;
-  transaction_id: string;
+}
+
+// Update existing types
+export interface OcrResponse {
+  code: number;
+  message:string;
+  transaction_id:string;
+  error?: string;
   data: {
+    
     address: string;
-    date_of_birth: string;
-    district: string;
-    fathers_name: string;
     gender: string;
-    house_number: string;
+    date_of_birth?: string;
+    fathers_name: string;
+    district: string;
+    state: string;
+    pincode: string;
     id_number: string;
     is_scanned: boolean;
     name_on_card: string;
-    pincode: string;
-    state: string;
     street_address: string;
     year_of_birth: string;
     name_information: {
@@ -31,6 +46,10 @@ export interface ExtractedInfo {
   dateOfBirth: string;
   fatherName: string;
   photo: string;
+  district: string;
+  state: string;
+  pincode: string;
+  idNumber: string;
   [key: string]: string;
 }
 
@@ -44,12 +63,6 @@ export interface AadhaarVerifyResponse {
   success: boolean;
   isVerified: boolean;
   ekycData?: ExtractedInfo;
-}
-
-export interface OcrResponse {
-  success: boolean;
-  extractedData: ExtractedInfo;
-  confidence: number;
 }
 
 export interface FaceMatchResponse {

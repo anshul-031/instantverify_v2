@@ -1,43 +1,50 @@
 import { makeRequest } from './api';
-import { OcrResponse, ExtractedInfo, AadhaarOCRResponse } from '@/lib/types/deepvue';
+import { AuthResponse,OcrResponse, ExtractedInfo } from '@/lib/types/deepvue';
 import logger from '@/lib/utils/logger';
 
-export async function extractAadhaarOcr(documentUrl: string): Promise<ExtractedInfo> {
-  logger.debug('Extracting Aadhaar OCR data', { documentUrl });
-  
+export async function extractAadhaarOcr(document1: string, document2: string): Promise<ExtractedInfo> {
   try {
-    // In production, this would make an actual API call
-    // For development, we'll use the mock response
-
-    let mockResponse;
-    if(process.env.NEXT_PUBLIC_AADHAAR_OCR_API_RESPONSE){
-      mockResponse = JSON.parse(process.env.NEXT_PUBLIC_AADHAAR_OCR_API_RESPONSE);
-      console.log("Using mock Aadhaar OCR API Response");
-    }else{
-      // TODO: Call Deepvue AADHAAR OCR  API to fetch EKYC Data 
-    }
+    logger.debug('Starting Aadhaar OCR extraction');
+    const clientId = process.env.NEXT_PUBLIC_DEEPVUE_CONFIG;
+    const clientSecrete = process.env.NEXT_PUBLIC_DEEPVUE_CONFIG;
     
-    // Transform the mock response to match our ExtractedInfo interface
-    const extractedInfo: ExtractedInfo = {
-      name: mockResponse.data.name_on_card,
-      address: mockResponse.data.address,
-      gender: mockResponse.data.gender,
-      dateOfBirth: mockResponse.data.date_of_birth || `${mockResponse.data.year_of_birth}-01-01`,
-      fatherName: mockResponse.data.fathers_name,
-      photo: '', // Mock response doesn't include photo
-      district: mockResponse.data.district,
-      state: mockResponse.data.state,
-      pincode: mockResponse.data.pincode,
-      idNumber: mockResponse.data.id_number
-    };
-
-    logger.info('Successfully extracted Aadhaar OCR data', {
-      transactionId: mockResponse.transaction_id
+    const response = await makeRequest<OcrResponse>('/documents/extraction/ind_aadhaar', {
+      method: 'POST',
+      headers: {
+        'x-api-key': `${clientId}`,
+        'client-id': `${clientSecrete}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        document1,
+        document2,
+        name: 'aadhaar'
+      })
     });
 
+    if (response.code !== 200) {
+      throw new Error(response.error || 'OCR extraction failed');
+    }
+
+    // Transform OCR response to ExtractedInfo format
+    const extractedInfo: ExtractedInfo = {
+      name: response.data.name_on_card,
+      address: response.data.address,
+      gender: response.data.gender,
+      dateOfBirth: response.data.date_of_birth || `${response.data.year_of_birth}-01-01`,
+      fatherName: response.data.fathers_name,
+      photo: '',
+      district: response.data.district,
+      state: response.data.state,
+      pincode: response.data.pincode,
+      idNumber: response.data.id_number
+    };
+
+    logger.info('Aadhaar OCR extraction successful');
     return extractedInfo;
+
   } catch (error) {
-    logger.error('Failed to extract Aadhaar OCR data:', error);
-    throw new Error('Failed to extract document information');
+    logger.error('Aadhaar OCR extraction failed:', error);
+    throw error;
   }
 }
