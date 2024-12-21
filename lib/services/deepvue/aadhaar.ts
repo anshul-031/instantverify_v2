@@ -1,4 +1,4 @@
-import { makeRequest } from './api';
+import { accessToken, makeRequest, sessionId, initializeSession } from './api';
 import { AadhaarOtpResponse, AadhaarVerifyResponse, ExtractedInfo } from '@/lib/types/deepvue';
 import { getMockAadhaarOtpResponse, getMockAadhaarEkycResponse } from './mock';
 import logger from '@/lib/utils/logger';
@@ -10,15 +10,29 @@ export async function generateAadhaarOtp(
   logger.debug('Generating Aadhaar OTP', { aadhaarNumber });
   
   // In development, return mock response
-  if (process.env.NODE_ENV === 'development') {
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
-    return getMockAadhaarOtpResponse();
+  // if (process.env.NODE_ENV === 'development') {
+  //   await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+  //   return getMockAadhaarOtpResponse();
+  // }
+
+  const clientSecret = process.env.NEXT_PUBLIC_DEEPVUE_CLIENT_SECRET;
+
+  if (!sessionId) {
+    initializeSession();
+  }
+  const response = await makeRequest<AadhaarOtpResponse>(`https://production.deepvue.tech/v1/ekyc/aadhaar/generate-otp?aadhaar_number=${aadhaarNumber}&captcha=${captcha}&session_id=${sessionId}&consent=Y&purpose=For KYC`, {
+    method: 'POST', // Use GET request as parameters are passed in the URL
+    headers: {
+      'Authorization': `Bearer ${accessToken}`, // Add Authorization header with bearer token
+      'x-api-key': `${clientSecret}`,
+    },
+  });
+
+  if(response.code !== 200) {
+    logger.info('otp generation failed')
   }
 
-  return makeRequest<AadhaarOtpResponse>('/aadhaar/generate-otp', {
-    method: 'POST',
-    body: JSON.stringify({ aadhaarNumber, captcha }),
-  });
+  return response;
 }
 
 export async function verifyAadhaarOtp(

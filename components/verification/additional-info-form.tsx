@@ -9,6 +9,7 @@ import { ExtractedInfo } from "@/lib/types/deepvue";
 import { AadhaarInput } from "./forms/aadhaar/aadhaar-input";
 import { OtpInput } from "./forms/aadhaar/otp-input";
 import { useToast } from "@/components/ui/use-toast";
+import { deepvueService } from '@/lib/services/deepvue';
 
 interface FormData {
   aadhaarNumber: string;
@@ -58,17 +59,18 @@ export function AdditionalInfoForm({ method, onSubmit, isSubmitting, extractedIn
     setSendingOtp(true);
     try {
       // Simulate API call
-      const response = await fetch('/api/mock/generate-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aadhaarNumber: formData.aadhaarNumber })
-      });
+      // const response = await fetch('/api/mock/generate-otp', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ aadhaarNumber: formData.aadhaarNumber })
+      // });
 
-      const data = await response.json();
+      // const data = await response.json();
+      const response = await deepvueService.generateAadhaarOTP(formData.aadhaarNumber,"");
       
       toast({
         title: "OTP Sent",
-        description: "An OTP has been sent to your Aadhaar-linked mobile number",
+        description: response.message,
       });
 
       setShowOtpInput(true);

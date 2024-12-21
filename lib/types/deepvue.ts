@@ -54,8 +54,10 @@ export interface ExtractedInfo {
 }
 
 export interface AadhaarOtpResponse {
-  success: boolean;
-  requestId: string;
+  code: number;
+  timestamp:string;
+  transaction_id:string;
+  sub_code:string;
   message: string;
 }
 

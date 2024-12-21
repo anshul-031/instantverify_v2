@@ -1,6 +1,7 @@
 import { DEEPVUE_CONFIG } from './config';
-import { AuthResponse, SessionResponse, OcrResponse, ExtractedInfo } from '@/lib/types/deepvue';
+import { AuthResponse, SessionResponse, OcrResponse, ExtractedInfo, AadhaarOtpResponse } from '@/lib/types/deepvue';
 import logger from '@/lib/utils/logger';
+import { timeStamp } from 'console';
 
 // Define the DeepvueError class
 export class DeepvueError extends Error {
@@ -24,8 +25,8 @@ export class DeepvueError extends Error {
   }
 }
 
-let accessToken: string | null = null;
-let sessionId: string | null = null;
+export let accessToken: string | null = null;
+export let sessionId: string | null = null;
 
 async function authorize(): Promise<string> {
   try {
@@ -73,7 +74,7 @@ async function authorize(): Promise<string> {
   }
 }
 
-async function initializeSession(): Promise<string> {
+export async function initializeSession(): Promise<string> {
   try {
     const clientId = DEEPVUE_CONFIG.CLIENT_ID;
     const clientSecret = DEEPVUE_CONFIG.CLIENT_SECRET;
@@ -162,19 +163,47 @@ export async function extractAadhaarOcr(document1: string, document2: string): P
     const clientId = DEEPVUE_CONFIG.CLIENT_ID;
     const clientSecret = DEEPVUE_CONFIG.CLIENT_SECRET;
    
-    const response = await makeRequest<OcrResponse>('/documents/extraction/ind_aadhaar', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`, // Add Authorization header with bearer token
-        'x-api-key': `${clientSecret}`,
-        'Content-Type': 'application/json'
+    // const response = await makeRequest<OcrResponse>('/documents/extraction/ind_aadhaar', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Authorization': `Bearer ${accessToken}`, // Add Authorization header with bearer token
+    //     'x-api-key': `${clientSecret}`,
+    //     'Content-Type': 'application/json'
+    //   },
+    //   body: JSON.stringify({
+    //     document1,
+    //     document2,
+    //     name: 'aadhaar'
+    //   })
+    // });
+
+    const response = {
+      "data": {
+        "address": "S/O   Ambaldhage Eranna Rao Shairkhan Colony, Near, 518302",
+        "date_of_birth": "",
+        "district": "Kurnool",
+        "fathers_name": "Ambaldhage Eranna Rao",
+        "gender": "Male",
+        "house_number": "",
+        "id_number": "681038138566",
+        "is_scanned": false,
+        "name_on_card": "Ambaldhage Ganesh Pratap",
+        "pincode": "518302",
+        "state": "Andhra Pradesh",
+        "street_address": "",
+        "year_of_birth": "1984",
+        "name_information": {
+          "name_cleaned": "Ambaldhage Ganesh Pratap",
+          "match_score": 45,
+          "name_provided": "aadhaar"
+        }
       },
-      body: JSON.stringify({
-        document1,
-        document2,
-        name: 'aadhaar'
-      })
-    });
+      "message": "Document processed successfuly",
+      "transaction_id": "76d64ad6-623d-4b57-abee-ef40d44169ea",
+      "error":"",
+      "code": 200
+    };
+
     
     if (response.code !== 200) {
       throw new Error(response.error || 'OCR extraction failed');
@@ -201,4 +230,42 @@ export async function extractAadhaarOcr(document1: string, document2: string): P
     logger.error('Aadhaar OCR extraction failed:', error);
     throw error;
   }
+}
+
+export async function generateAadhaarOTP(aadhaarNumber:string, captcha:string): Promise<AadhaarOtpResponse> {
+
+  const clientId = DEEPVUE_CONFIG.CLIENT_ID;
+  const clientSecret = DEEPVUE_CONFIG.CLIENT_SECRET;
+
+  try {
+    if (!accessToken) {
+      await authorize();
+    }
+
+    if (!sessionId) {
+      await initializeSession();
+    }
+
+    // Simulate API call
+    const response = await makeRequest<AadhaarOtpResponse>(`https://production.deepvue.tech/v1/ekyc/aadhaar/generate-otp?aadhaar_number=${aadhaarNumber}&captcha=${captcha}&session_id=${sessionId}&consent=Y&purpose=For KYC`, {
+      method: 'GET', // Use GET request as parameters are passed in the URL
+      headers: {
+        'Authorization': `Bearer ${accessToken}`, // Add Authorization header with bearer token
+        'client-id': `${clientSecret}`,
+        'x-api-key': `${clientSecret}`,
+      },
+    });
+
+    if (response.code !== 200) {
+      throw new Error(response.error || 'OCR extraction failed');
+    }
+  
+    logger.info('Generate aadhaar OTP successful');
+    return response;
+    
+  } catch (error) {
+    logger.error('Generate OTP failed:', error);
+    throw error;
+  } 
+
 }
