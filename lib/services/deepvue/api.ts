@@ -157,53 +157,25 @@ export async function makeRequest<T>(endpoint: string, options: RequestInit = {}
 export async function extractAadhaarOcr(document1: string, document2: string): Promise<ExtractedInfo> {
   try {
     if (!accessToken) {
-    //  await authorize();
+      await authorize();
     }
     logger.debug('Starting Aadhaar OCR extraction');
     const clientId = DEEPVUE_CONFIG.CLIENT_ID;
     const clientSecret = DEEPVUE_CONFIG.CLIENT_SECRET;
    
-    // const response = await makeRequest<OcrResponse>('/documents/extraction/ind_aadhaar', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${accessToken}`, // Add Authorization header with bearer token
-    //     'x-api-key': `${clientSecret}`,
-    //     'Content-Type': 'application/json'
-    //   },
-    //   body: JSON.stringify({
-    //     document1,
-    //     document2,
-    //     name: 'aadhaar'
-    //   })
-    // });
-
-    const response = {
-      "data": {
-        "address": "S/O   Ambaldhage Eranna Rao Shairkhan Colony, Near, 518302",
-        "date_of_birth": "",
-        "district": "Kurnool",
-        "fathers_name": "Ambaldhage Eranna Rao",
-        "gender": "Male",
-        "house_number": "",
-        "id_number": "681038138566",
-        "is_scanned": false,
-        "name_on_card": "Ambaldhage Ganesh Pratap",
-        "pincode": "518302",
-        "state": "Andhra Pradesh",
-        "street_address": "",
-        "year_of_birth": "1984",
-        "name_information": {
-          "name_cleaned": "Ambaldhage Ganesh Pratap",
-          "match_score": 45,
-          "name_provided": "aadhaar"
-        }
+    const response = await makeRequest<OcrResponse>('/documents/extraction/ind_aadhaar', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`, // Add Authorization header with bearer token
+        'x-api-key': `${clientSecret}`,
+        'Content-Type': 'application/json'
       },
-      "message": "Document processed successfuly",
-      "transaction_id": "76d64ad6-623d-4b57-abee-ef40d44169ea",
-      "error":"",
-      "code": 200
-    };
-
+      body: JSON.stringify({
+        document1,
+        document2,
+        name: 'aadhaar'
+      })
+    });
     
     if (response.code !== 200) {
       throw new Error(response.error || 'OCR extraction failed');

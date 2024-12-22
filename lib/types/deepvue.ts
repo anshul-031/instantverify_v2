@@ -59,6 +59,7 @@ export interface AadhaarOtpResponse {
   transaction_id:string;
   sub_code:string;
   message: string;
+  error?: string;
 }
 
 export interface AadhaarVerifyResponse {
