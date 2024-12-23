@@ -1,7 +1,8 @@
 import { DEEPVUE_CONFIG } from './config';
-import { AuthResponse, SessionResponse, OcrResponse, ExtractedInfo, AadhaarOtpResponse } from '@/lib/types/deepvue';
+import { AuthResponse, SessionResponse, OcrResponse, ExtractedInfo, AadhaarOtpResponse, SessionData } from '@/lib/types/deepvue';
 import logger from '@/lib/utils/logger';
 import { timeStamp } from 'console';
+import { Coda } from 'next/font/google';
 
 // Define the DeepvueError class
 export class DeepvueError extends Error {
@@ -26,7 +27,10 @@ export class DeepvueError extends Error {
 }
 
 export let accessToken: string | null = null;
-export let sessionId: string | null = null;
+export let sessionData: SessionData | null = null;
+export let captcha: string | null = "null";
+let sessionInstance: SessionData | null = null;
+
 
 async function authorize(): Promise<string> {
   try {
@@ -74,19 +78,14 @@ async function authorize(): Promise<string> {
   }
 }
 
-export async function initializeSession(): Promise<string> {
+export async function initializeSession(): Promise<SessionData> {
   try {
     const clientId = DEEPVUE_CONFIG.CLIENT_ID;
     const clientSecret = DEEPVUE_CONFIG.CLIENT_SECRET;
 
-    if (!accessToken) {
-      await authorize();
-    }
-
     const response = await fetch(`${DEEPVUE_CONFIG.API_BASE}/ekyc/aadhaar/connect?consent=Y&purpose=For KYC`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
         'x-api-key':`${clientSecret}`,
         'client-id':`${clientId}`,
       }
@@ -101,10 +100,20 @@ export async function initializeSession(): Promise<string> {
     }
 
     const data: SessionResponse = await response.json();
-    sessionId = data.session_id;
-    logger.info('Deepvue session initialized');
     
-    return sessionId;
+    captcha = data.data.captcha;
+    
+    logger.info('Deepvue session initialized');
+    const sessData: SessionData = {
+      timestamp:data.timestamp,
+      transactionId:data.transaction_id,
+      sessionId:data.data.session_id,
+      captcha:data.data.captcha,
+      code:data.code,
+    }
+    sessionData = sessData;
+    sessionInstance = sessionData;
+    return sessData;
   } catch (error) {
     logger.error('Session initialization failed:', error);
     throw error instanceof DeepvueError ? error : new DeepvueError(
@@ -117,19 +126,12 @@ export async function initializeSession(): Promise<string> {
 
 export async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   try {
-    if (!accessToken) {
-      await authorize();
-    }
-
-    if (!sessionId) {
-      await initializeSession();
-    }
-
+    
     const response = await fetch(`${DEEPVUE_CONFIG.API_BASE}${endpoint}`, {
       ...options,
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'X-Session-ID': sessionId!,
+        'X-Session-ID': sessionData?.sessionId!,
         ...options.headers,
       }
     });
@@ -204,36 +206,50 @@ export async function extractAadhaarOcr(document1: string, document2: string): P
   }
 }
 
-export async function generateAadhaarOTP(aadhaarNumber:string, captcha:string): Promise<AadhaarOtpResponse> {
+export async function getCaptcha() : Promise<SessionData>{
+  if (sessionInstance) {
+    return sessionInstance;
+  }
+  return initializeSession();
+}
 
+// Reset session (useful for testing or error recovery)
+export function resetSession(): void {
+  sessionInstance = null;
+}
+
+export async function generateAadhaarOTP(aadhaarNumber:string, captcha:string, sessionId:string): Promise<AadhaarOtpResponse> {
+  console.log("generateAadhaarOTP sessionId",sessionId);
   const clientId = DEEPVUE_CONFIG.CLIENT_ID;
   const clientSecret = DEEPVUE_CONFIG.CLIENT_SECRET;
 
   try {
-    if (!accessToken) {
-      await authorize();
-    }
-
-    if (!sessionId) {
-      await initializeSession();
-    }
-
     // Simulate API call
-    const response = await makeRequest<AadhaarOtpResponse>(`https://production.deepvue.tech/v1/ekyc/aadhaar/generate-otp?aadhaar_number=${aadhaarNumber}&captcha=${captcha}&session_id=${sessionId}&consent=Y&purpose=For KYC`, {
-      method: 'GET', // Use GET request as parameters are passed in the URL
+    const response = await fetch(`${DEEPVUE_CONFIG.API_BASE}/ekyc/aadhaar/generate-otp?aadhaar_number=${aadhaarNumber}&captcha=${captcha}&session_id=${sessionId}&consent=Y&purpose=For KYC`, {
+      method: 'POST', // Use GET request as parameters are passed in the URL
       headers: {
-        'Authorization': `Bearer ${accessToken}`, // Add Authorization header with bearer token
-        'client-id': `${clientSecret}`,
+        // Add Authorization header with bearer token
+        'client-id': `${clientId}`,
         'x-api-key': `${clientSecret}`,
       },
     });
 
-    if (response.code !== 200) {
-      throw new Error(response.error || 'OCR extraction failed');
+    if (!response.ok) {
+      throw new DeepvueError(
+        'Failed to Generate OTP',
+        'GENERATE_OTP_FAILED',
+        new Error(`HTTP ${response.status}`)
+      );
+    }
+
+    const aadhaarOTPResponse: AadhaarOtpResponse = await response.json();
+    
+    if (aadhaarOTPResponse.code !== 200) {
+      throw new Error(aadhaarOTPResponse.error || 'OCR extraction failed');
     }
   
     logger.info('Generate aadhaar OTP successful');
-    return response;
+    return aadhaarOTPResponse;
     
   } catch (error) {
     logger.error('Generate OTP failed:', error);

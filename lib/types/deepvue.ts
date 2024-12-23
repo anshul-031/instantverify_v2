@@ -6,9 +6,13 @@ export interface AuthResponse {
 }
 
 export interface SessionResponse {
-  session_id: string;
-  status: string;
-  message: string;
+  timestamp: string;
+  transaction_id: string;
+  data: {
+        session_id: string;
+        captcha: string;
+    },
+    code: number;
 }
 
 // Update existing types
@@ -51,6 +55,15 @@ export interface ExtractedInfo {
   pincode: string;
   idNumber: string;
   [key: string]: string;
+}
+
+export interface SessionData {
+
+  timestamp: string;
+  transactionId: string;
+  sessionId: string;
+  captcha: string;
+  code: number;
 }
 
 export interface AadhaarOtpResponse {

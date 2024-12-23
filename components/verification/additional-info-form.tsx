@@ -1,19 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { VerificationMethod } from "@/lib/types/verification";
-import { ExtractedInfo } from "@/lib/types/deepvue";
+import { ExtractedInfo, SessionData } from "@/lib/types/deepvue";
 import { AadhaarInput } from "./forms/aadhaar/aadhaar-input";
 import { OtpInput } from "./forms/aadhaar/otp-input";
 import { useToast } from "@/components/ui/use-toast";
-import { deepvueService } from '@/lib/services/deepvue';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { getCaptcha, generateAadhaarOTP } from "@/lib/services/deepvue/api";
 
 interface FormData {
   aadhaarNumber: string;
   otp: string;
+  captcha: string;
 }
 
 interface Props {
@@ -21,20 +24,50 @@ interface Props {
   onSubmit: (data: { aadhaarNumber: string; otp: string }) => Promise<void>;
   isSubmitting: boolean;
   extractedInfo?: ExtractedInfo;
-  personPhotoUrl?: string; // Add this line
+  personPhotoUrl?: string;
 }
-
 
 const initialFormState: FormData = {
   aadhaarNumber: "",
   otp: "",
+  captcha: "",
 };
 
-export function AdditionalInfoForm({ method, onSubmit, isSubmitting, extractedInfo, personPhotoUrl}: Props) {
+export function AdditionalInfoForm({ 
+  method, 
+  onSubmit, 
+  isSubmitting, 
+  extractedInfo, 
+  personPhotoUrl
+}: Props) {
   const [formData, setFormData] = useState<FormData>(initialFormState);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
+  const [sessionData, setSessionData] = useState<SessionData | null>(null);
+  const [isCaptchaShowing, setCaptchaShowing] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const initializeCaptcha = async () => {
+     
+    };
+
+  }, [toast]);
+
+ async function initializeCaptcha() {
+    try {
+      const data = await getCaptcha();
+      console.log("initiated getcaptch");
+      setSessionData(data);
+      setCaptchaShowing(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load captcha. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +79,9 @@ export function AdditionalInfoForm({ method, onSubmit, isSubmitting, extractedIn
       ...prev,
       aadhaarNumber: value
     }));
+    if (!isCaptchaShowing) {
+      initializeCaptcha();
+    }
   };
 
   const handleOtpChange = (value: string) => {
@@ -55,42 +91,50 @@ export function AdditionalInfoForm({ method, onSubmit, isSubmitting, extractedIn
     }));
   };
 
+  const handleCaptchaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      captcha: e.target.value
+    }));
+  };
+
   const handleSendOtp = async () => {
+    if (!sessionData) {
+      toast({
+        title: "Error",
+        description: "Please wait for captcha to load",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSendingOtp(true);
     try {
-      // Simulate API call
-      // const response = await fetch('/api/mock/generate-otp', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ aadhaarNumber: formData.aadhaarNumber })
-      // });
-
-      // const data = await response.json();
-      const response = await deepvueService.generateAadhaarOTP(formData.aadhaarNumber,"");
+      const response = await generateAadhaarOTP(
+        formData.aadhaarNumber,
+        formData.captcha,
+        sessionData.sessionId
+      );
       
-      toast({
-        title: "OTP Sent",
-        description: response.message,
-      });
-
-      setShowOtpInput(true);
+      if (response.code === 200) {
+        toast({
+          title: "OTP Sent",
+          description: "An OTP has been sent to your Aadhaar-linked mobile number",
+        });
+        setShowOtpInput(true);
+      } else {
+        throw new Error(response.error || 'Failed to send OTP');
+      }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to send OTP. Please try again.",
+        description: "Failed to send OTP. Please verify captcha and try again.",
         variant: "destructive",
       });
     } finally {
       setSendingOtp(false);
     }
   };
-
-  // Only show Aadhaar form for all Aadhaar-based methods
-  const showAadhaarForm = method.includes('aadhaar');
-
-  if (!showAadhaarForm) {
-    return null;
-  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -128,11 +172,35 @@ export function AdditionalInfoForm({ method, onSubmit, isSubmitting, extractedIn
         disabled={isSubmitting}
       />
 
+      {sessionData && (
+        <div className="space-y-4">
+          <div className="max-w-[200px] mx-auto">
+            <img 
+              src={`data:image/jpeg;base64,${sessionData.captcha}`}
+              alt="Captcha"
+              className="w-full rounded-md border"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="captcha">Enter Captcha</Label>
+            <Input
+              id="captcha"
+              value={formData.captcha}
+              onChange={handleCaptchaChange}
+              placeholder="Enter the captcha shown above"
+              disabled={isSubmitting}
+              required
+            />
+          </div>
+        </div>
+      )}
+
       {!showOtpInput && (
         <Button
           type="button"
           onClick={handleSendOtp}
-          disabled={formData.aadhaarNumber.length !== 12 || sendingOtp}
+          disabled={formData.aadhaarNumber.length !== 12 || !formData.captcha || sendingOtp}
           className="w-full"
         >
           {sendingOtp ? (
