@@ -58,7 +58,6 @@ export interface ExtractedInfo {
 }
 
 export interface SessionData {
-
   timestamp: string;
   transactionId: string;
   sessionId: string;
@@ -68,7 +67,7 @@ export interface SessionData {
 
 export interface AadhaarOtpResponse {
   code: number;
-  timestamp:string;
+  timestamp:number;
   transaction_id:string;
   sub_code:string;
   message: string;
@@ -79,6 +78,7 @@ export interface AadhaarVerifyResponse {
   success: boolean;
   isVerified: boolean;
   ekycData?: ExtractedInfo;
+  error?:string;
 }
 
 export interface FaceMatchResponse {

@@ -1,5 +1,5 @@
 import { DEEPVUE_CONFIG } from './config';
-import { AuthResponse, SessionResponse, OcrResponse, ExtractedInfo, AadhaarOtpResponse, SessionData } from '@/lib/types/deepvue';
+import { AuthResponse, SessionResponse, OcrResponse, ExtractedInfo, AadhaarOtpResponse, SessionData, AadhaarVerifyResponse } from '@/lib/types/deepvue';
 import logger from '@/lib/utils/logger';
 import { timeStamp } from 'console';
 import { Coda } from 'next/font/google';
@@ -179,6 +179,7 @@ export async function extractAadhaarOcr(document1: string, document2: string): P
       })
     });
     
+    
     if (response.code !== 200) {
       throw new Error(response.error || 'OCR extraction failed');
     }
@@ -224,7 +225,7 @@ export async function generateAadhaarOTP(aadhaarNumber:string, captcha:string, s
   const clientSecret = DEEPVUE_CONFIG.CLIENT_SECRET;
 
   try {
-    // Simulate API call
+    //Simulate API call
     const response = await fetch(`${DEEPVUE_CONFIG.API_BASE}/ekyc/aadhaar/generate-otp?aadhaar_number=${aadhaarNumber}&captcha=${captcha}&session_id=${sessionId}&consent=Y&purpose=For KYC`, {
       method: 'POST', // Use GET request as parameters are passed in the URL
       headers: {
@@ -242,7 +243,8 @@ export async function generateAadhaarOTP(aadhaarNumber:string, captcha:string, s
       );
     }
 
-    const aadhaarOTPResponse: AadhaarOtpResponse = await response.json();
+   const aadhaarOTPResponse: AadhaarOtpResponse = await response.json();
+   
     
     if (aadhaarOTPResponse.code !== 200) {
       throw new Error(aadhaarOTPResponse.error || 'OCR extraction failed');
@@ -256,4 +258,63 @@ export async function generateAadhaarOTP(aadhaarNumber:string, captcha:string, s
     throw error;
   } 
 
+}
+
+export async function verifyAadhaarOtp(otp:string, sessionId:string): Promise<AadhaarVerifyResponse> {
+
+  const clientId = DEEPVUE_CONFIG.CLIENT_ID;
+  const clientSecret = DEEPVUE_CONFIG.CLIENT_SECRET;
+
+  try {
+
+    const response = await fetch(`${DEEPVUE_CONFIG.API_BASE}/ekyc/aadhaar/verify-otp?otp=${otp}&session_id=${sessionId}&consent=Y&purpose=For KYC`, {
+      method: 'POST', // Use GET request as parameters are passed in the URL
+      headers: {
+        // Add Authorization header with bearer token
+        'client-id': `${clientId}`,
+        'x-api-key': `${clientSecret}`,
+        'Content-Type':"application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new DeepvueError(
+        'Failed to Verify OTP',
+        'VERIFY_OTP_FAILED',
+        new Error(`HTTP ${response.status}`)
+      );
+    }
+
+   const responseData = await response.json();
+
+    const aadhaarVerifyResponse:AadhaarVerifyResponse = {
+      success: responseData.code === 200 ? true : false,
+      isVerified: true,
+      ekycData: 
+      {
+        name: responseData.data.name,
+        address: responseData.data.address.careOf + ', ' + responseData.data.address.locality + ', ' + responseData.data.address.district + ', ' + responseData.data.address.state + ' - ' + responseData.data.address.pin,
+        gender: responseData.data.gender === 'M' ? 'Male' : 'Female',
+        dateOfBirth: responseData.data.dateOfBirth,
+        fatherName: responseData.data.address.careOf.replace('S/O ', ''),
+        photo: responseData.data.photo,
+        district: responseData.data.address.district,
+        state: responseData.data.address.state,
+        pincode: responseData.data.address.pin,
+        idNumber: responseData.data.maskedNumber
+      }
+    }
+
+    if (!aadhaarVerifyResponse.success) {
+      throw new Error(aadhaarVerifyResponse.error || 'vaerify otp failed');
+    }
+  
+    logger.info('verify aadhaar OTP successful');
+    return aadhaarVerifyResponse;
+
+  }
+  catch (error) {
+    logger.error('verify addhaar otp failed:', error);
+    throw error;
+  }
 }

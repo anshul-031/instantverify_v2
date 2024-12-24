@@ -35,7 +35,7 @@ export async function generateAadhaarOtp(
   return response;
 }
 
-export async function verifyAadhaarOtp(
+/*export async function verifyAadhaarOtp(
   aadhaarNumber: string,
   otp: string
 ): Promise<AadhaarVerifyResponse> {
@@ -73,4 +73,4 @@ export async function getAadhaarEkyc(
     method: 'POST',
     body: JSON.stringify({ aadhaarNumber, otp }),
   });
-}
+}*/

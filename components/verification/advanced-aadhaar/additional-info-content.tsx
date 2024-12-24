@@ -10,6 +10,7 @@ import { VerificationDetails } from "@/lib/types/verification";
 import { ExtractedInfo } from "@/lib/types/deepvue";
 import { useVerificationStore } from "@/lib/store/verification";
 import { storageService } from '@/lib/services/storage';
+import { verifyAadhaarOtp } from "@/lib/services/deepvue/api";
 
 interface Props {
   verification: VerificationDetails;
@@ -68,7 +69,7 @@ export function AdditionalInfoContent({
     setIsLoading(true);
     try {
       // Verify OTP and get eKYC data
-      const ekycData = await deepvueService.getAadhaarEkyc(
+      const ekycData = await verifyAadhaarOtp(//await deepvueService.getAadhaarEkyc(
         data.aadhaarNumber,
         data.otp
       );
@@ -80,7 +81,7 @@ export function AdditionalInfoContent({
         const personPhotoUrl = await storageService.getSignedUrl(personPhoto.url);
         faceMatchScore = await deepvueService.matchFaces(
           personPhotoUrl,
-          ekycData.photo
+          ekycData.ekycData?.photo || ""
         );
       }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { VerificationReport } from "@/lib/types/report";
 import { LocationInfoSection } from "./location-info";
 import { BackgroundCheckSection } from "./background-check";
@@ -36,22 +36,22 @@ export function VerificationReportView({ report }: Props) {
   };
 
   const ekycData = {
-    name: metadata?.ekycData?.name || "N/A",
-    address: metadata?.ekycData?.address || "N/A",
-    gender: metadata?.ekycData?.gender || "N/A",
-    dateOfBirth: metadata?.ekycData?.dateOfBirth || "N/A",
-    fatherName: metadata?.ekycData?.fatherName || "N/A",
-    district: metadata?.ekycData?.district || "N/A",
-    state: metadata?.ekycData?.state || "N/A",
-    city: metadata?.ekycData?.city || "N/A",
-    pincode: metadata?.ekycData?.pincode || "N/A",
-    country: metadata?.ekycData?.country || "India",
-    idNumber: metadata?.ekycData?.idNumber || metadata?.ekycData?.maskedNumber || "N/A",
-    photo: metadata?.ekycData?.photo || "",
+    name: metadata?.ekycData?.ekycData?.name || "N/A",
+    address: metadata?.ekycData?.ekycData?.address || "N/A",
+    gender: metadata?.ekycData?.ekycData?.gender || "N/A",
+    dateOfBirth: metadata?.ekycData?.ekycData?.dateOfBirth || "N/A",
+    fatherName: metadata?.ekycData?.ekycData?.fatherName || "N/A",
+    district: metadata?.ekycData?.ekycData?.district || "N/A",
+    state: metadata?.ekycData?.ekycData?.state || "N/A",
+    city: metadata?.ekycData?.ekycData?.city || "N/A",
+    pincode: metadata?.ekycData?.ekycData?.pincode || "N/A",
+    country: metadata?.ekycData?.ekycData?.country || "India",
+    photo: metadata?.ekycData?.ekycData?.photo || "",
+    idNumber:metadata.ekycData?.ekycData?.idNumber || "",
   };
 
   // Get the person photo URL from the verification documents
-  const personPhotoUrl = metadata?.personPhotoUrl || report.verificationDetails.documents?.personPhoto?.[0]?.url;
+  const personPhotoUrl = metadata?.personPhotoUrl || report.verificationDetails.metadata.personPhotoUrl;//documents?.personPhoto?.[0]?.url;
 
   const handleDownloadPDF = async () => {
     setIsGeneratingPDF(true);
