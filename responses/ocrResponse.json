@@ -1,0 +1,15 @@
+{
+    "name": "Anshul Kumar",
+    "fatherName": "Vijay Kumar Goel",
+    "dateOfBirth": "31/05/1996",
+    "gender": "MALE",
+    "aadhaarNumber": "XXXX XXXX 2433",
+    "address": "S/O Vijay Kumar Goel, 72/436, AGARSAIN VIHAR, JANSATH ROAD, Muzaffarnagar, PO: Muzaffar Nagar City, DIST: Muzaffarnagar, Uttar Pradesh - 251002",
+    "addressComponents": {
+        "street": "72/436, AGARSAIN VIHAR, JANSATH ROAD",
+        "locality": "Muzaffarnagar",
+        "district": "Muzaffarnagar",
+        "state": "Uttar Pradesh",
+        "pinCode": "251002"
+    }
+}
