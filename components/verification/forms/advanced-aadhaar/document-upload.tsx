@@ -1,4 +1,3 @@
-// components/verification/forms/advanced-aadhaar/document-upload.tsx
 "use client";
 
 import { useState } from "react";
@@ -10,12 +9,14 @@ import { AlertTriangle, Camera, Upload, X } from "lucide-react";
 import { CameraCapture } from "@/components/verification/camera/camera-capture";
 import { extractAadhaarOcr } from "@/lib/services/deepvue/api";
 import { useToast } from "@/components/ui/use-toast";
+import { Card } from "@/components/ui/card";
+import { ExtractedInfo } from "@/lib/types/deepvue";
 
 interface DocumentUploadProps {
   onSubmit: (data: { 
     aadhaarFront: File; 
     aadhaarBack: File;
-    extractedInfo?: any; 
+    extractedInfo?: ExtractedInfo; 
   }) => void;
   initialDocuments?: {
     aadhaarFront: File | null;
@@ -34,9 +35,11 @@ export function DocumentUpload({
     aadhaarBack: initialDocuments?.aadhaarBack || null,
   });
   const [activeCamera, setActiveCamera] = useState<"front" | "back" | null>(null);
+  const [extractedInfo, setExtractedInfo] = useState<ExtractedInfo | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  const handleFileChange = (side: "front" | "back") => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (side: "front" | "back") => async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       setDocuments(prev => ({
         ...prev,
@@ -60,50 +63,40 @@ export function DocumentUpload({
       ...prev,
       [`aadhaar${side.charAt(0).toUpperCase()}${side.slice(1)}`]: null,
     }));
+    setExtractedInfo(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!documents.aadhaarFront || !documents.aadhaarBack) return;
 
+    setIsProcessing(true);
     try {
-      // Convert images to base64
-      const document1 = await fileToBase64(documents.aadhaarFront);
-      const document2 = await fileToBase64(documents.aadhaarBack);
-
-      // Call OCR API
-      const extractedInfo = await extractAadhaarOcr(document1, document2);
+      // Extract OCR information
+      const info = await extractAadhaarOcr(documents.aadhaarFront, documents.aadhaarBack);
+      setExtractedInfo(info);
 
       // Submit data with extracted info
       onSubmit({
         aadhaarFront: documents.aadhaarFront,
         aadhaarBack: documents.aadhaarBack,
-        extractedInfo
+        extractedInfo: info
       });
 
+      toast({
+        title: "Documents Processed",
+        description: "Aadhaar card information extracted successfully.",
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to process Aadhaar card",
         variant: "destructive",
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
-
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const base64String = reader.result as string;
-        resolve(base64String.split(',')[1]);
-      };
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
-  // Rest of the component remains the same...
-  // (Keep the existing JSX and UI code)
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -250,12 +243,27 @@ export function DocumentUpload({
         </div>
       </div>
 
+      {/* Extracted Information */}
+      {extractedInfo && (
+        <Card className="p-4 bg-gray-50">
+          <h3 className="font-semibold mb-4">Extracted Information</h3>
+          <div className="grid grid-cols-2 gap-4">
+            {Object.entries(extractedInfo).map(([key, value]) => (
+              <div key={key} className="text-sm">
+                <span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}: </span>
+                <span className="text-gray-600">{value}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       <Button
         type="submit"
-        disabled={!documents.aadhaarFront || !documents.aadhaarBack || isSubmitting}
+        disabled={!documents.aadhaarFront || !documents.aadhaarBack || isSubmitting || isProcessing}
         className="w-full"
       >
-        {isSubmitting ? "Processing..." : "Continue"}
+        {isProcessing ? "Processing..." : isSubmitting ? "Submitting..." : "Continue"}
       </Button>
     </form>
   );
