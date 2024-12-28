@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { VerifiedImage } from "@/components/ui/verified-image";
 import { X } from "lucide-react";
 
 interface DocumentPreviewProps {
@@ -15,10 +16,11 @@ export function DocumentPreview({ file, onRemove, isSubmitting }: DocumentPrevie
   return (
     <div className="relative">
       {file.type.startsWith('image/') ? (
-        <img
+        <VerifiedImage
           src={url}
           alt={file.name}
-          className="w-full h-48 object-cover rounded-lg"
+          className="w-full h-48"
+          aspectRatio="video"
         />
       ) : (
         <div className="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center">

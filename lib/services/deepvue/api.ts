@@ -161,7 +161,7 @@ export async function extractAadhaarOcr(document1: File, document2: File): Promi
     logger.debug('Starting Aadhaar OCR extraction');
     const myHeaders = new Headers();
     myHeaders.append("Accept", "application/json");
-
+   
     const formdata = new FormData();
     formdata.append('files',document1);
     formdata.append('files',document2);
@@ -197,10 +197,10 @@ export async function extractAadhaarOcr(document1: File, document2: File): Promi
       pincode: result.addressComponents.pinCode,
       idNumber: result.aadhaarNumber
     };
+
     logger.info('Aadhaar OCR extraction successful');
-    console.log("extractedInfo");
-    console.log(extractedInfo);
     return extractedInfo;
+
   } catch (error) {
     logger.error('Aadhaar OCR extraction failed:', error);
     throw error;
