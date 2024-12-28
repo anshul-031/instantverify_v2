@@ -156,51 +156,51 @@ export async function makeRequest<T>(endpoint: string, options: RequestInit = {}
   }
 }
 
-export async function extractAadhaarOcr(document1: string, document2: string): Promise<ExtractedInfo> {
+export async function extractAadhaarOcr(document1: File, document2: File): Promise<ExtractedInfo> {
   try {
-    if (!accessToken) {
-      await authorize();
-    }
     logger.debug('Starting Aadhaar OCR extraction');
-    const clientId = DEEPVUE_CONFIG.CLIENT_ID;
-    const clientSecret = DEEPVUE_CONFIG.CLIENT_SECRET;
-   
-    const response = await makeRequest<OcrResponse>('/documents/extraction/ind_aadhaar', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`, // Add Authorization header with bearer token
-        'x-api-key': `${clientSecret}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        document1,
-        document2,
-        name: 'aadhaar'
-      })
-    });
-    
-    
-    if (response.code !== 200) {
-      throw new Error(response.error || 'OCR extraction failed');
-    }
+    const myHeaders = new Headers();
+    myHeaders.append("Accept", "application/json");
 
-    // Transform OCR response to ExtractedInfo format
-    const extractedInfo: ExtractedInfo = {
-      name: response.data.name_on_card,
-      address: response.data.address,
-      gender: response.data.gender,
-      dateOfBirth: response.data.date_of_birth || `${response.data.year_of_birth}-01-01`,
-      fatherName: response.data.fathers_name,
-      photo: '',
-      district: response.data.district,
-      state: response.data.state,
-      pincode: response.data.pincode,
-      idNumber: response.data.id_number
+    const formdata = new FormData();
+    formdata.append('files',document1);
+    formdata.append('files',document2);
+
+    const requestOptions:RequestInit = {
+      method: "POST",
+      headers: myHeaders,
+      body: formdata,
+      redirect: "follow"
     };
 
-    logger.info('Aadhaar OCR extraction successful');
-    return extractedInfo;
+    const response = await fetch("https://instantverify-aadhaar-ocr.vercel.app/api/aadhaar/gemini", requestOptions);
 
+    if (!response.ok) {
+      const error = await response.json();
+      throw new DeepvueError(
+        error.message || 'API request failed',
+        'REQUEST_FAILED',
+        new Error(`HTTP ${response.status}`)
+      );
+    }
+
+    const result = await response.json();
+    const extractedInfo: ExtractedInfo = {
+      name: result.name,
+      address: result.address,
+      gender: result.gender,
+      dateOfBirth: result.dateOfBirth,
+      fatherName: result.fatherName,
+      photo: '',
+      district: result.addressComponents.district,
+      state: result.addressComponents.state,
+      pincode: result.addressComponents.pinCode,
+      idNumber: result.aadhaarNumber
+    };
+    logger.info('Aadhaar OCR extraction successful');
+    console.log("extractedInfo");
+    console.log(extractedInfo);
+    return extractedInfo;
   } catch (error) {
     logger.error('Aadhaar OCR extraction failed:', error);
     throw error;

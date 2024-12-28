@@ -67,12 +67,8 @@ export function DocumentUpload({
     if (!documents.aadhaarFront || !documents.aadhaarBack) return;
 
     try {
-      // Convert images to base64
-      const document1 = await fileToBase64(documents.aadhaarFront);
-      const document2 = await fileToBase64(documents.aadhaarBack);
-
       // Call OCR API
-      const extractedInfo = await extractAadhaarOcr(document1, document2);
+      const extractedInfo = await extractAadhaarOcr(documents.aadhaarFront, documents.aadhaarBack);
 
       // Submit data with extracted info
       onSubmit({
