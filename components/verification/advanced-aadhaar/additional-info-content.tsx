@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { VerificationDetails, VerificationMethod } from "@/lib/types/verification";
 import { AdditionalInfoForm } from "@/components/verification/additional-info-form";
 import { useToast } from "@/components/ui/use-toast";
@@ -19,6 +19,9 @@ export function AdditionalInfoContent({ verification, isLoading, setIsLoading, o
   const [extractedInfo, setExtractedInfo] = useState(verification.metadata?.extractedInfo);
   const { toast } = useToast();
   const setVerification = useVerificationStore(state => state.setVerification);
+
+  // Extract Aadhaar number from OCR data or metadata
+  const aadhaarNumber = verification.aadhaarNumber || verification.metadata?.extractedInfo?.idNumber || '';
 
   const handleSubmit = async (data: { aadhaarNumber: string; otp: string }) => {
     try {
@@ -68,6 +71,7 @@ export function AdditionalInfoContent({ verification, isLoading, setIsLoading, o
       isSubmitting={isLoading}
       extractedInfo={extractedInfo}
       personPhotoUrl={verification.documents?.personPhoto?.[0]?.url}
+      initialAadhaarNumber={aadhaarNumber} // Pass the initial Aadhaar number
     />
   );
 }

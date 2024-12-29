@@ -13,34 +13,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getCaptcha, generateAadhaarOTP } from "@/lib/services/deepvue/api";
 
-interface FormData {
-  aadhaarNumber: string;
-  otp: string;
-  captcha: string;
-}
-
 interface Props {
   method: VerificationMethod;
   onSubmit: (data: { aadhaarNumber: string; otp: string }) => Promise<void>;
   isSubmitting: boolean;
   extractedInfo?: ExtractedInfo;
   personPhotoUrl?: string;
+  initialAadhaarNumber?: string;
 }
 
-const initialFormState: FormData = {
-  aadhaarNumber: "",
-  otp: "",
-  captcha: "",
-};
+interface FormData {
+  aadhaarNumber: string;
+  otp: string;
+  captcha: string;
+}
 
 export function AdditionalInfoForm({ 
   method, 
   onSubmit, 
   isSubmitting, 
   extractedInfo, 
-  personPhotoUrl
+  personPhotoUrl,
+  initialAadhaarNumber = ''
 }: Props) {
-  const [formData, setFormData] = useState<FormData>(initialFormState);
+  const [formData, setFormData] = useState<FormData>({
+    aadhaarNumber: initialAadhaarNumber,
+    otp: "",
+    captcha: "",
+  });
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
@@ -48,26 +48,31 @@ export function AdditionalInfoForm({
   const { toast } = useToast();
 
   useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      aadhaarNumber: initialAadhaarNumber
+    }));
+  }, [initialAadhaarNumber]);
+
+  useEffect(() => {
     const initializeCaptcha = async () => {
-     
+      try {
+        const data = await getCaptcha();
+        setSessionData(data);
+        setCaptchaShowing(true);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to load captcha. Please try again.",
+          variant: "destructive",
+        });
+      }
     };
 
-  }, [toast]);
-
- async function initializeCaptcha() {
-    try {
-      const data = await getCaptcha();
-      console.log("initiated getcaptch");
-      setSessionData(data);
-      setCaptchaShowing(true);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load captcha. Please try again.",
-        variant: "destructive",
-      });
+    if (!isCaptchaShowing) {
+      initializeCaptcha();
     }
-  }
+  }, [isCaptchaShowing, toast]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +85,7 @@ export function AdditionalInfoForm({
       aadhaarNumber: value
     }));
     if (!isCaptchaShowing) {
-      initializeCaptcha();
+      setCaptchaShowing(true);
     }
   };
 
