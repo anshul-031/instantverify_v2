@@ -3,6 +3,7 @@ import { AuthResponse, SessionResponse, OcrResponse, ExtractedInfo, AadhaarOtpRe
 import logger from '@/lib/utils/logger';
 import { timeStamp } from 'console';
 import { Coda } from 'next/font/google';
+import { storeOcrData } from './ocr';
 
 // Define the DeepvueError class
 export class DeepvueError extends Error {
@@ -163,8 +164,8 @@ export async function extractAadhaarOcr(document1: File, document2: File): Promi
     myHeaders.append("Accept", "application/json");
    
     const formdata = new FormData();
-    formdata.append('files',document1);
-    formdata.append('files',document2);
+    formdata.append('files', document1);
+    formdata.append('files', document2);
 
     const requestOptions:RequestInit = {
       method: "POST",
@@ -197,6 +198,15 @@ export async function extractAadhaarOcr(document1: File, document2: File): Promi
       pincode: result.addressComponents.pinCode,
       idNumber: result.aadhaarNumber
     };
+
+    // Store extracted info in database using service function
+    await fetch('/api/ocr', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ extractedInfo })
+    });
 
     logger.info('Aadhaar OCR extraction successful');
     return extractedInfo;
@@ -285,8 +295,7 @@ export async function verifyAadhaarOtp(otp:string, sessionId:string): Promise<Aa
       );
     }
 
-   const responseData = await response.json();
-
+    const responseData = await response.json();
     const aadhaarVerifyResponse:AadhaarVerifyResponse = {
       success: responseData.code === 200 ? true : false,
       isVerified: true,

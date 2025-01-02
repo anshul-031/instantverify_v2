@@ -48,3 +48,24 @@ export async function extractAadhaarOcr(document1: string, document2: string): P
     throw error;
   }
 }
+
+export async function storeOcrData(extractedInfo: ExtractedInfo) {
+  try {
+    const response = await fetch('/api/ocr', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ extractedInfo })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to store OCR data');
+    }
+
+    return await response.json();
+  } catch (error) {
+    logger.error('Failed to store OCR data:', error);
+    throw error;
+  }
+}

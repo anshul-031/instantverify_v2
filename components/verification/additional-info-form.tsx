@@ -39,7 +39,7 @@ export function AdditionalInfoForm({
   const [formData, setFormData] = useState<FormData>({
     aadhaarNumber: initialAadhaarNumber,
     otp: "",
-    captcha: "",
+    captcha: "123456",
   });
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
@@ -69,9 +69,9 @@ export function AdditionalInfoForm({
       }
     };
 
-    if (!isCaptchaShowing) {
-      initializeCaptcha();
-    }
+    // if (!isCaptchaShowing) {
+    //   initializeCaptcha();
+    // }
   }, [isCaptchaShowing, toast]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -105,22 +105,31 @@ export function AdditionalInfoForm({
 
   const handleSendOtp = async () => {
     if (!sessionData) {
-      toast({
-        title: "Error",
-        description: "Please wait for captcha to load",
-        variant: "destructive",
-      });
-      return;
+      // toast({
+      //   title: "Error",
+      //   description: "Please wait for captcha to load",
+      //   variant: "destructive",
+      // });
+     // return;
     }
 
     setSendingOtp(true);
     try {
-      const response = await generateAadhaarOTP(
-        formData.aadhaarNumber,
-        formData.captcha,
-        sessionData.sessionId
-      );
+      //uncomment this for real OTO generation
+      // const response = await generateAadhaarOTP(
+      //   formData.aadhaarNumber,
+      //   formData.captcha,
+      //   sessionData.sessionId
+      // );
       
+      const response = {
+        "error":"",
+        "code": 200,
+        "timestamp": 1732782245867,
+        "transaction_id": "920e91af40ef45c589ae140ef26e93f8",
+        "sub_code": "SUCCESS",
+        "message": "OTP sent to your Registered Mobile number. Check your mobile."
+    }
       if (response.code === 200) {
         toast({
           title: "OTP Sent",
@@ -205,7 +214,7 @@ export function AdditionalInfoForm({
         <Button
           type="button"
           onClick={handleSendOtp}
-          disabled={formData.aadhaarNumber.length !== 12 || !formData.captcha || sendingOtp}
+          disabled={formData.aadhaarNumber.length !== 12 || /*!formData.captcha ||*/ sendingOtp}
           className="w-full"
         >
           {sendingOtp ? (

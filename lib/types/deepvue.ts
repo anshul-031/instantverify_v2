@@ -6,7 +6,7 @@ export interface AuthResponse {
 }
 
 export interface SessionResponse {
-  timestamp: string;
+  timestamp: number;
   transaction_id: string;
   data: {
         session_id: string;
@@ -58,7 +58,7 @@ export interface ExtractedInfo {
 }
 
 export interface SessionData {
-  timestamp: string;
+  timestamp: number;
   transactionId: string;
   sessionId: string;
   captcha: string;

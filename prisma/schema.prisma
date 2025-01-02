@@ -45,3 +45,12 @@ model Verification {
 
   @@map("verifications")
 }
+
+// Add OCR data model
+model OcrData {
+  id        String   @id @default(cuid())
+  data      Json
+  createdAt DateTime @default(now())
+
+  @@map("ocr_data")
+}
