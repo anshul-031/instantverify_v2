@@ -11,7 +11,7 @@ import { OtpInput } from "./forms/aadhaar/otp-input";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getCaptcha, generateAadhaarOTP } from "@/lib/services/deepvue/api";
+import { getCaptcha, generateAadhaarOTP, generateAadhaarOTPSandbox, authenticateSandbox } from "@/lib/services/deepvue/api";
 
 interface Props {
   method: VerificationMethod;
@@ -74,6 +74,21 @@ export function AdditionalInfoForm({
     // }
   }, [isCaptchaShowing, toast]);
 
+  useEffect(() => {
+    const authenticateSandboxAPI = async () => {
+      try {
+        const response = await authenticateSandbox(); // Replace with your API endpoint
+        if (!response.access_token) {
+          throw new Error('Sandbox authenticate eror');
+        }
+      } catch (err) {
+        throw new Error("error");
+      }
+    };
+
+    authenticateSandboxAPI();
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
@@ -116,20 +131,10 @@ export function AdditionalInfoForm({
     setSendingOtp(true);
     try {
       //uncomment this for real OTO generation
-      // const response = await generateAadhaarOTP(
-      //   formData.aadhaarNumber,
-      //   formData.captcha,
-      //   sessionData.sessionId
-      // );
+      const response = await generateAadhaarOTPSandbox(
+        formData.aadhaarNumber
+      );
       
-      const response = {
-        "error":"",
-        "code": 200,
-        "timestamp": 1732782245867,
-        "transaction_id": "920e91af40ef45c589ae140ef26e93f8",
-        "sub_code": "SUCCESS",
-        "message": "OTP sent to your Registered Mobile number. Check your mobile."
-    }
       if (response.code === 200) {
         toast({
           title: "OTP Sent",

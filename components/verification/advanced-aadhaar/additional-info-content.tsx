@@ -5,7 +5,7 @@ import { VerificationDetails, VerificationMethod } from "@/lib/types/verificatio
 import { AdditionalInfoForm } from "@/components/verification/additional-info-form";
 import { useToast } from "@/components/ui/use-toast";
 import { useVerificationStore } from "@/lib/store/verification";
-import { verifyAadhaarOtp } from "@/lib/services/deepvue/api";
+import { verifyAadhaarOtp, verifyAadhaarOTPSandbox } from "@/lib/services/deepvue/api";
 import logger from "@/lib/utils/logger";
 import { useRouter } from "next/navigation";
 import { storageService } from '@/lib/services/storage';
@@ -48,7 +48,7 @@ export function AdditionalInfoContent({ verification, isLoading, setIsLoading, o
 
   const handleSubmit = async (data: { aadhaarNumber: string; otp: string }) => {
     try {
-      const ekycData = await verifyAadhaarOtp(//await deepvueService.getAadhaarEkyc(
+      const ekycData = await verifyAadhaarOTPSandbox(//await deepvueService.getAadhaarEkyc(
         data.aadhaarNumber,
         data.otp
       );

@@ -91,3 +91,20 @@ export interface DeepvueError extends Error {
   code: string;
   status: number;
 }
+
+//Sandbox
+export interface InitializeSandboxResponse {
+  access_token: string;
+}
+
+export interface GenerateOTPSandboxResponse {
+  timestamp:Number,
+  transaction_id: string;
+  data: {
+    entity: string;
+    reference_id?:number;
+    message:string;
+  }
+  code: number;
+  error?: string;
+}

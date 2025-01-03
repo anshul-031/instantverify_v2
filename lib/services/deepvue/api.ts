@@ -1,9 +1,10 @@
-import { DEEPVUE_CONFIG } from './config';
-import { AuthResponse, SessionResponse, OcrResponse, ExtractedInfo, AadhaarOtpResponse, SessionData, AadhaarVerifyResponse } from '@/lib/types/deepvue';
+import { DEEPVUE_CONFIG, SANDBOX_CONFIG } from './config';
+import { AuthResponse, SessionResponse, OcrResponse, ExtractedInfo, AadhaarOtpResponse, SessionData, AadhaarVerifyResponse, InitializeSandboxResponse, GenerateOTPSandboxResponse } from '@/lib/types/deepvue';
 import logger from '@/lib/utils/logger';
 import { timeStamp } from 'console';
 import { Coda } from 'next/font/google';
 import { storeOcrData } from './ocr';
+import { promises } from 'dns';
 
 // Define the DeepvueError class
 export class DeepvueError extends Error {
@@ -27,10 +28,33 @@ export class DeepvueError extends Error {
   }
 }
 
+// Define the DeepvueError class
+export class SandboxError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+    public originalError?: Error
+  ) {
+    super(message);
+    this.name = 'SandboxError';
+    
+    // Capture stack trace
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, SandboxError);
+    }
+
+    // Preserve original error stack if available
+    if (originalError?.stack) {
+      this.stack = `${this.stack}\nCaused by: ${originalError.stack}`;
+    }
+  }
+}
+
 export let accessToken: string | null = null;
 export let sessionData: SessionData | null = null;
 export let captcha: string | null = "null";
 let sessionInstance: SessionData | null = null;
+export let referenceId: number | null = 0;
 
 
 async function authorize(): Promise<string> {
@@ -324,6 +348,180 @@ export async function verifyAadhaarOtp(otp:string, sessionId:string): Promise<Aa
   }
   catch (error) {
     logger.error('verify addhaar otp failed:', error);
+    throw error;
+  }
+}
+
+
+//Sandbox Authorize API
+export async function authenticateSandbox(): Promise<InitializeSandboxResponse>{
+  try {
+
+    const response = await fetch(`${SANDBOX_CONFIG.API_BASE}/authenticate`, {
+      method: 'POST', // Use GET request as parameters are passed in the URL
+      headers: {
+        // Add Authorization header with bearer token
+        'x-api-secret': `${SANDBOX_CONFIG.CLIENT_SECRET}`,
+        'x-api-key': `${SANDBOX_CONFIG.CLIENT_ID}`,
+        'x-api-version':'2.0',
+        'accept':"application/json",
+      },
+    });
+  
+    if (!response.ok) {
+      throw new SandboxError(
+        'Failed to initialize Sandbox',
+        'SANDBOX_INIT_FAILED',
+        new Error(`HTTP ${response.status}`)
+      );
+    }
+  
+    const initializeSandboxResponseData = await response.json();
+    const initializeSandboxResponse:InitializeSandboxResponse = {
+      access_token:initializeSandboxResponseData.access_token
+    }
+    accessToken = initializeSandboxResponse.access_token
+    
+    logger.info('SANDBOX Initialization successful');
+
+    return initializeSandboxResponse;
+  
+  } catch (error) {
+    logger.error('SANDBOX Initialization failed:', error);
+    throw error;
+  } 
+
+}
+
+//Sandbox Authorize API
+export async function generateAadhaarOTPSandbox(aadhaarNumber: string): Promise<GenerateOTPSandboxResponse> {
+
+  try {
+    if (!accessToken) {
+      await authenticateSandbox();
+    }
+
+    const response = await fetch(`https://try.readme.io/${SANDBOX_CONFIG.API_BASE}/kyc/aadhaar/okyc/otp`, {
+      method: 'POST', 
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `${accessToken}`,
+        'x-api-key': `${SANDBOX_CONFIG.CLIENT_ID}`,
+        'x-api-version': '2.0',
+        'Content-Type': "application/json",
+      },
+      body: JSON.stringify({
+        '@entity': 'in.co.sandbox.kyc.aadhaar.okyc.otp.request',
+        'aadhaar_number': `${aadhaarNumber}`,
+        'consent': 'y',
+        'reason': 'For KYC'
+      }),
+    });
+
+    // Read the response body once
+    const responseData = await response.json();
+
+    //Check if the response is not OK (status code other than 2xx)
+    if (!response.ok) {
+      throw new SandboxError(
+        'Failed to Generate OTP Sandbox',
+        'SANDBOX_OTP_FAILED',
+        new Error(`HTTP ${responseData.message}`)
+      );
+    }
+
+    // Use the response data
+    const generateAadhaarSandboxResponse: GenerateOTPSandboxResponse = {
+      timestamp: responseData.timestamp,
+      transaction_id: responseData.transaction_id,
+      data: {
+        entity: responseData.data['@entity'],
+        reference_id: responseData.data.reference_id,
+        message: responseData.data.message
+      },
+      code: responseData.code
+    };
+
+    referenceId = generateAadhaarSandboxResponse.data.reference_id || 0;
+    if (generateAadhaarSandboxResponse.code !== 200) {
+      throw new Error(generateAadhaarSandboxResponse.error || 'OCR extraction failed');
+    }
+
+    logger.info('Generate aadhaar OTP successful');
+    return generateAadhaarSandboxResponse;
+
+  } catch (error) {
+    logger.error('Generate OTP failed:', error);
+    throw error;
+  }
+}
+
+export async function verifyAadhaarOTPSandbox(aadhaarNumber:string, otp: string): Promise<AadhaarVerifyResponse> {
+  try {
+    if (!accessToken) {
+      await authenticateSandbox();
+    }
+
+    if (!referenceId) {
+      await generateAadhaarOTPSandbox(aadhaarNumber);
+    }
+
+    const response = await fetch(`https://try.readme.io/${SANDBOX_CONFIG.API_BASE}/kyc/aadhaar/okyc/otp/verify`, {
+      method: 'POST', 
+      headers: {
+        'accept': 'application/json',
+        'authorization': `${accessToken}`,
+        'x-api-key': `${SANDBOX_CONFIG.CLIENT_ID}`,
+        'x-api-version': '2.0',
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        '@entity': 'in.co.sandbox.kyc.aadhaar.okyc.request',
+        'reference_id': `${referenceId}`,
+        'otp': `${otp}`,
+      }),
+    });
+
+   // Read the response body once
+   const responseData = await response.json();
+   
+    //Check if the response is not OK (status code other than 2xx)
+    if (!response.ok) {
+      throw new SandboxError(
+        'Failed to verify OTP Sandbox',
+        'SANDBOX_VERIFY_OTP_FAILED',
+        new Error(`HTTP ${responseData.message}`)
+      );
+    }
+
+    // Use the response data
+    const verifyAadhaarSandboxResponse: AadhaarVerifyResponse = {
+      success: responseData.code === 200 ? true : false,
+      isVerified: true,
+      ekycData: 
+      {
+        name: responseData.data.name,
+        address: responseData.data.full_address,
+        gender: responseData.data.gender === 'M' ? 'Male' : 'Female',
+        dateOfBirth: responseData.data.date_of_birth,
+        fatherName: responseData.data.care_of.replace('S/O ', ''),
+        photo: responseData.data.photo,
+        district: responseData.data.address.district,
+        state: responseData.data.address.state,
+        pincode: `${responseData.data.address.pincode}`,
+        idNumber: aadhaarNumber
+      }
+    };
+
+    if (responseData.code !== 200) {
+      throw new Error(verifyAadhaarSandboxResponse.error || 'OCR extraction failed');
+    }
+
+    logger.info('Generate aadhaar OTP successful');
+    return verifyAadhaarSandboxResponse;
+
+  } catch (error) {
+    logger.error('Generate OTP failed:', error);
     throw error;
   }
 }
