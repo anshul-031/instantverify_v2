@@ -357,7 +357,7 @@ export async function verifyAadhaarOtp(otp:string, sessionId:string): Promise<Aa
 export async function authenticateSandbox(): Promise<InitializeSandboxResponse>{
   try {
 
-    const response = await fetch(`${SANDBOX_CONFIG.API_BASE}/authenticate`, {
+    const response = await fetch(`https://try.readme.io/${SANDBOX_CONFIG.API_BASE}/authenticate`, {
       method: 'POST', // Use GET request as parameters are passed in the URL
       headers: {
         // Add Authorization header with bearer token

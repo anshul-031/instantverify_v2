@@ -26,7 +26,7 @@ export const DEEPVUE_CONFIG: DeepvueConfig = {
 };
 
 export const SANDBOX_CONFIG: SandboxConfig = {
-  API_BASE: process.env.NEXT_PUBLIC_SANDBOX_API_BASE || 'https://production.deepvue.tech/v1',
+  API_BASE: process.env.NEXT_PUBLIC_SANDBOX_API_BASE || '',
   CLIENT_ID: process.env.NEXT_PUBLIC_SANDBOX_CLIENT_ID || '',
   CLIENT_SECRET: process.env.NEXT_PUBLIC_SANDBOX_CLIENT_SECRET || '',
   TIMEOUT: 30000, // 30 seconds
